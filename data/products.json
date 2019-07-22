@@ -1,1 +1,8 @@
-[{"title":"First product"},{"title":"Second book"},{"title":"Next version"}]
+[
+  {
+    "title": "Book title",
+    "imageUrl": "http://www.salesby5.com/wp-content/uploads/2008/10/book.png",
+    "description": "An awesome book!\r\n",
+    "price": "19.99"
+  }
+]
