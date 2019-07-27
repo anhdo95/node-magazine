@@ -1,6 +1,8 @@
 const fs = require('fs')
 const path = require('path')
 
+const Cart = require('./cart')
+
 const { rootDir } = require('../util/path')
 
 const PRODUCTS_FILE_NAME = 'products.json'
@@ -56,6 +58,9 @@ module.exports = class Product {
       fs.writeFile(PRODUCTS_FILE_PATH, JSON.stringify(updatedProducts), (err) => {
         if (!err) {
           // remove the item from the cart
+          const productToDelete = products.find(p => p.id === id)
+
+          Cart.deleteProduct(id, productToDelete.price)
         }
       })
     })
