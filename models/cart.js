@@ -59,6 +59,8 @@ module.exports = class Cart {
       const cart = JSON.parse(fileContent)
       const productToDelete = cart.products.find(p => p.id === id)
 
+      if (!productToDelete) return
+
       cart.totalPrice -= (productToDelete.qty * productPrice)
 
       cart.products = cart.products.filter(p => p.id !== id)
