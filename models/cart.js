@@ -7,6 +7,16 @@ const CART_FILE_NAME = 'cart.json'
 const CART_FILE_PATH = path.join(rootDir, 'data', CART_FILE_NAME)
 
 module.exports = class Cart {
+  static getCart(cb) {
+    fs.readFile(CART_FILE_PATH, (err, fileContent) => {
+      if (err) {
+        cb(null)
+      } else {
+        cb(JSON.parse(fileContent))
+      }
+    })
+  }
+
   static addProduct(id, productPrice) {
     // Fetch the previous cart
     fs.readFile(CART_FILE_PATH, (err, fileContent) => {
