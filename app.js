@@ -3,6 +3,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 
 const { rootDir } = require('./util/path')
+const sequelize = require('./util/database')
 
 const adminRoutes = require('./routes/admin')
 const shopRoutes = require('./routes/shop')
@@ -21,4 +22,9 @@ app.use(shopRoutes)
 
 app.use(get404)
 
-app.listen(9000)
+sequelize.sync()
+  .then(() => {
+    app.listen(9000)
+  })
+  .catch(console.error)
+
