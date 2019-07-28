@@ -23,8 +23,8 @@ exports.postAddProduct = (req, res) => {
 
   const product = new Product(null, title, imageUrl, description, price)
   product.save()
-
-  res.redirect('/')
+    .then(() => res.redirect('/'))
+    .catch(console.error)
 }
 
 exports.getEditProduct = (req, res) => {
