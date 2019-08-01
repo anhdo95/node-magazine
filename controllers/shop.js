@@ -1,5 +1,5 @@
 const Product = require('../models/product')
-const Cart = require('../models/cart')
+const Order = require('../models/order')
 
 exports.getProducts = (req, res, next) => {
   req.user
@@ -105,19 +105,39 @@ exports.postCartDeleteItem = (req, res, next) => {
 }
 
 exports.getOrders = (req, res, next) => {
-  Product.fetchAll(products => {
-    res.render('shop/orders', {
-      pageTitle: 'Your Orders',
-      path: '/orders',
-    })
+  req.user
+    .getOrders({ include: ['products'] })
+    .then(orders => {
+      res.render('shop/orders', {
+        pageTitle: 'Your Orders',
+        path: '/orders',
+        orders
+      })
   })
 }
 
-exports.getCheckout = (req, res, next) => {
-  Product.fetchAll(products => {
-    res.render('shop/checkout', {
-      pageTitle: 'Checkout',
-      path: '/checkout',
+exports.postOrder = (req, res, next) => {
+  let fetchedCart
+
+  req.user
+    .getCart()
+    .then(cart => {
+      fetchedCart = cart
+      return cart.getProducts()
     })
-  })
+    .then(products => {
+      return req.user
+        .createOrder()
+        .then(order =>
+          order.addProduct(
+            products.map(product => {
+              product.orderItem = { quantity: product.cartItem.quantity };
+              return product;
+            })
+          )
+        )
+    })
+    .then(() => fetchedCart.setProducts(null))
+    .then(() => res.redirect("/orders"))
+    .catch(console.error);
 }
