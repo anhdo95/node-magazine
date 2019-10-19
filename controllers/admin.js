@@ -1,9 +1,9 @@
 const Product = require('../models/product')
 
 exports.getProducts = (req, res) => {
-  req.user
-    .getProducts()
+  Product.fetchAll()
     .then(products => {
+      console.log('products :', products);
       res.render('admin/products', {
         pageTitle: 'Admin Products',
         path: '/admin/products',

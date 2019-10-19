@@ -5,7 +5,7 @@ const router = express.Router()
 const {
   getAddProduct,
   postAddProduct,
-  // getProducts,
+  getProducts,
   // getEditProduct,
   // postEditProduct,
   // postDeleteProduct
@@ -13,7 +13,7 @@ const {
 
 router.get('/add-product', getAddProduct)
 
-// router.get('/products', getProducts)
+router.get('/products', getProducts)
 
 router.post('/add-product', postAddProduct)
 

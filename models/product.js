@@ -1,3 +1,4 @@
+const { ObjectID } = require('mongodb')
 const { getDb } = require('../util/database')
 
 class Product {
@@ -13,6 +14,26 @@ class Product {
       const db = getDb()
 
       return await db.collection('products').insertOne(this)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  static async fetchAll() {
+    try {
+      const db = getDb()
+
+      return await db.collection('products').find({}).toArray()
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  static async findById(productId) {
+    try {
+      const db = getDb()
+
+      return await db.collection('products').findOne({ _id: new ObjectID(productId) })
     } catch (error) {
       console.error(error);
     }
