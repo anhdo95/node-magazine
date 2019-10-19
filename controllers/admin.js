@@ -3,7 +3,6 @@ const Product = require('../models/product')
 exports.getProducts = (req, res) => {
   Product.fetchAll()
     .then(products => {
-      console.log('products :', products);
       res.render('admin/products', {
         pageTitle: 'Admin Products',
         path: '/admin/products',
@@ -23,7 +22,7 @@ exports.getAddProduct = (req, res) => {
 exports.postAddProduct = (req, res) => {
   const { title, imageUrl, description, price } = req.body
 
-  const product = new Product(title, imageUrl, description, price)
+  const product = new Product(title, price, description, imageUrl)
 
   product.save()
     .then(() => res.redirect('/'))
@@ -39,7 +38,7 @@ exports.getEditProduct = (req, res) => {
 
   const { productId } = req.params
 
-  Product.findByPk(productId)
+  Product.findById(productId)
     .then(product => {
       if (!product) {
         return res.redirect('/404')
@@ -57,18 +56,10 @@ exports.getEditProduct = (req, res) => {
 exports.postEditProduct = (req, res) => {
   const { productId, title, imageUrl, description, price } = req.body
 
-  Product.findByPk(productId)
-    .then(product => {
-      product.title = title
-      product.imageUrl = imageUrl
-      product.description = description
-      product.price = price
+  const product = new Product(title, price, description, imageUrl, productId)
 
-      return product.save()
-    })
-    .then(() => {
-      res.redirect('/admin/products')
-    })
+  return product.save()
+    .then(() => res.redirect('/admin/products'))
     .catch(console.error)
 }
 
