@@ -7,7 +7,7 @@ class Product {
     this.price = price
     this.description = description
     this.imageUrl = imageUrl
-    this.id = new ObjectID(id)
+    this.id = id && new ObjectID(id)
   }
 
   async save() {
@@ -40,6 +40,16 @@ class Product {
       const db = getDb()
 
       return await db.collection('products').findOne({ _id: new ObjectID(productId) })
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  static async deleteById(productId) {
+    try {
+      const db = getDb()
+
+      return await db.collection('products').deleteOne({ _id: new ObjectID(productId) })
     } catch (error) {
       console.error(error);
     }
