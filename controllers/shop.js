@@ -33,15 +33,15 @@ exports.getProduct = (req, res, next) => {
 }
 
 exports.getIndex = (req, res, next) => {
-  Product.findAll()
-    .then(products => {
+  // Product.findAll()
+  //   .then(products => {
       res.render('shop/index', {
         pageTitle: 'Shop',
         path: '/',
         prods: products,
       })
-    })
-    .catch(console.error)
+    // })
+    // .catch(console.error)
 }
 
 exports.getCart = (req, res, next) => {

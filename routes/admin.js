@@ -5,22 +5,22 @@ const router = express.Router()
 const {
   getAddProduct,
   postAddProduct,
-  getProducts,
-  getEditProduct,
-  postEditProduct,
-  postDeleteProduct
+  // getProducts,
+  // getEditProduct,
+  // postEditProduct,
+  // postDeleteProduct
 } = require("../controllers/admin")
 
 router.get('/add-product', getAddProduct)
 
-router.get('/products', getProducts)
+// router.get('/products', getProducts)
 
 router.post('/add-product', postAddProduct)
 
-router.get('/edit-product/:productId', getEditProduct)
+// router.get('/edit-product/:productId', getEditProduct)
 
-router.post('/edit-product', postEditProduct)
+// router.post('/edit-product', postEditProduct)
 
-router.post('/delete-product', postDeleteProduct)
+// router.post('/delete-product', postDeleteProduct)
 
 module.exports = router
