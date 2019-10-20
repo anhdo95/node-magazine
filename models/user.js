@@ -14,6 +14,7 @@ const userSchema = new Schema({
       {
         productId: {
           type: Types.ObjectId,
+          ref: 'Product',
           required: true
         },
         quantity: {
@@ -24,5 +25,34 @@ const userSchema = new Schema({
     ],
   }
 });
+
+userSchema.methods.addToCart = function(product) {
+  try {
+    const updatedCart = {
+      items: this.cart ? [ ...this.cart.items ] : []
+    }
+
+    const cartProductIndex = updatedCart.items.findIndex(cartItem => cartItem.productId.equals(product._id))
+
+    if (~cartProductIndex) {
+      updatedCart.items[cartProductIndex].quantity++
+    } else {
+      updatedCart.items.push({
+        productId: product._id,
+        quantity: 1
+      })
+    }
+
+    this.cart = updatedCart
+    this.save()
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+userSchema.methods.removeFromCart = function(productId) {
+  this.cart.items = this.cart.items.filter(item => !item.productId.equals(productId))
+  return this.save()
+}
 
 module.exports = model('User', userSchema)
