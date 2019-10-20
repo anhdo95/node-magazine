@@ -1,15 +1,17 @@
 const { ObjectID } = require('mongodb')
+
 const { getDb } = require('../util/database')
+const Product = require('../models/product')
 
 const getCartItemIndex = (cartItems, productId) => {
   return cartItems.findIndex(cartItem => cartItem.productId.equals(productId))
 }
 
 class User {
-  constructor(username, email, card, id) {
+  constructor(username, email, cart, id) {
     this.name = username
     this.email = email
-    this.card = card
+    this.cart = cart
     this._id = id && new ObjectID(id)
   }
 
@@ -50,6 +52,21 @@ class User {
       return db.collection('users').updateOne({ _id: this._id }, { $set: { cart: updatedCart } })
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  async getCart() {
+    try {
+      const products = await Product.findByIds(this.cart.items.map(item => item.productId))
+
+      return products.map(product => {
+        const cartItemIndex = getCartItemIndex(this.cart.items, product._id)
+        const quantity = this.cart.items[cartItemIndex].quantity
+
+        return { ...product, quantity }
+      })
+    } catch (error) {
+      console.error(error)
     }
   }
 

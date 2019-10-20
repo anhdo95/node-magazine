@@ -36,6 +36,16 @@ class Product {
     }
   }
 
+  static async findByIds(productIds) {
+    try {
+      const db = getDb()
+
+      return await db.collection('products').find({ _id: { $in: productIds } }).toArray()
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   static async findById(productId) {
     try {
       const db = getDb()
