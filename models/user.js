@@ -55,6 +55,22 @@ class User {
     }
   }
 
+  async deleteItemFromCart(productId) {
+    try {
+      const updatedCartItems = { ...this.cart.items }
+
+      updatedCartItems = updatedCartItems.filter(cartItem => !cartItem.productId.equals(productId))
+
+      const db = getDb()
+
+      return db
+        .collection('users')
+        .updateOne({ _id: this._id }, { $set: { cart: { items: updatedCartItems } } })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   async getCart() {
     try {
       const products = await Product.findByIds(this.cart.items.map(item => item.productId))
