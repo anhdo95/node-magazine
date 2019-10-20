@@ -1,7 +1,7 @@
 const Product = require('../models/product')
 
 exports.getProducts = (req, res) => {
-  Product.fetchAll()
+  Product.find()
     .then(products => {
       res.render('admin/products', {
         pageTitle: 'Admin Products',
@@ -58,9 +58,7 @@ exports.getEditProduct = (req, res) => {
 exports.postEditProduct = (req, res) => {
   const { productId, title, imageUrl, description, price } = req.body
 
-  const product = new Product(title, price, description, imageUrl, productId, req.user._id)
-
-  return product.save()
+  Product.findByIdAndUpdate(productId, { title, price, description, imageUrl })
     .then(() => res.redirect('/admin/products'))
     .catch(console.error)
 }
@@ -68,8 +66,7 @@ exports.postEditProduct = (req, res) => {
 exports.postDeleteProduct = (req, res) => {
   const { productId } = req.body
 
-  Product
-    .deleteById(productId)
+  Product.findByIdAndDelete(productId)
     .then(() => res.redirect('/admin/products'))
     .catch(console.error)
 }
