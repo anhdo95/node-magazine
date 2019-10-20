@@ -86,11 +86,29 @@ class User {
     }
   }
 
-  async addOrder() {
+  async getOrders() {
     try {
       const db = getDb()
 
-      const inserted = await db.collection('orders').insertOne(this)
+      return await db.collection('orders').find({ 'user._id': this._id }).toArray()
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async addOrder() {
+    try {
+      const db = getDb()
+      const cartItems = await this.getCart()
+      const order = {
+        items: cartItems,
+        user: {
+          _id: this._id,
+          name: this.name
+        }
+      }
+
+      const inserted = await db.collection('orders').insertOne(order)
 
       if (inserted) {
         return await this.emptyCart()

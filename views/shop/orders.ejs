@@ -6,10 +6,10 @@
     <main>
       <% if (orders.length) { %>
         <% orders.forEach(order => { %>
-          <h3># <%= order.id %></h3>
+          <h3># <%= order._id %></h3>
           <ul>
-            <% order.products.forEach(product => { %>
-              <li><%= product.title %> (<%= product.orderItem.quantity %>)</li>
+            <% order.items.forEach(product => { %>
+              <li><%= product.title %> (<%= product.quantity %>)</li>
             <% }) %>
           </ul>
         <% })  %>
