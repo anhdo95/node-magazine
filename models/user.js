@@ -1,11 +1,16 @@
 const { ObjectID } = require('mongodb')
 const { getDb } = require('../util/database')
 
+const getCartItemIndex = (cartItems, productId) => {
+  return cartItems.findIndex(cartItem => cartItem.productId.equals(productId))
+}
+
 class User {
-  constructor(username, email, id) {
+  constructor(username, email, card, id) {
     this.name = username
     this.email = email
-    this.id = id && new ObjectID(id)
+    this.card = card
+    this._id = id && new ObjectID(id)
   }
 
   async save() {
@@ -13,11 +18,36 @@ class User {
       const db = getDb()
       const collection = db.collection('users')
 
-      if (this.id) {
-        return await collection.updateOne({ _id: this.id }, { $set: this });
+      if (this._id) {
+        return await collection.updateOne({ _id: this._id }, { $set: this });
       }
 
       return await collection.insertOne(this)
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async addToCart(product) {
+    try {
+      const updatedCart = {
+        items: this.cart ? [ ...this.cart.items ] : []
+      }
+
+      const cartProductIndex = getCartItemIndex(updatedCart.items, product._id)
+
+      if (~cartProductIndex) {
+        updatedCart.items[cartProductIndex].quantity++
+      } else {
+        updatedCart.items.push({
+          productId: product._id,
+          quantity: 1
+        })
+      }
+
+      const db = getDb()
+
+      return db.collection('users').updateOne({ _id: this._id }, { $set: { cart: updatedCart } })
     } catch (error) {
       console.error(error);
     }
