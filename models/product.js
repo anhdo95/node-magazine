@@ -1,74 +1,97 @@
-const { ObjectID } = require('mongodb')
-const { getDb } = require('../util/database')
+const { Schema, model } = require('mongoose');
 
-class Product {
-  constructor(title, price, description, imageUrl, id, userId) {
-    this.title = title
-    this.price = price
-    this.description = description
-    this.imageUrl = imageUrl
-    this._id = id && new ObjectID(id)
-    this._userId = userId && new ObjectID(userId)
-  }
+const productSchema = new Schema({
+  title: {
+    type: String,
+    required:true
+  },
+  price: {
+    type: Number,
+    required:true
+  },
+  description: {
+    type: String,
+    required:true
+  },
+  imageUrl: {
+    type: String,
+    required:true
+  },
+});
 
-  async save() {
-    try {
-      const db = getDb()
-      const collection = db.collection('products')
+module.exports = model('Product', productSchema)
 
-      if (this._id) {
-        return await collection.updateOne({ _id: this._id }, { $set: this });
-      }
+// const { ObjectID } = require('mongodb')
+// const { getDb } = require('../util/database')
 
-      return await collection.insertOne(this)
-    } catch (error) {
-      console.error(error);
-    }
-  }
+// class Product {
+//   constructor(title, price, description, imageUrl, id, userId) {
+//     this.title = title
+//     this.price = price
+//     this.description = description
+//     this.imageUrl = imageUrl
+//     this._id = id && new ObjectID(id)
+//     this._userId = userId && new ObjectID(userId)
+//   }
 
-  static async fetchAll() {
-    try {
-      const db = getDb()
+//   async save() {
+//     try {
+//       const db = getDb()
+//       const collection = db.collection('products')
 
-      return await db.collection('products').find({}).toArray()
-    } catch (error) {
-      console.error(error);
-    }
-  }
+//       if (this._id) {
+//         return await collection.updateOne({ _id: this._id }, { $set: this });
+//       }
 
-  static async findByIds(productIds) {
-    try {
-      const db = getDb()
+//       return await collection.insertOne(this)
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
 
-      return await db.collection('products').find({ _id: { $in: productIds } }).toArray()
-    } catch (error) {
-      console.error(error);
-    }
-  }
+//   static async fetchAll() {
+//     try {
+//       const db = getDb()
 
-  static async findById(productId) {
-    try {
-      const db = getDb()
+//       return await db.collection('products').find({}).toArray()
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
 
-      return await db.collection('products').findOne({ _id: new ObjectID(productId) })
-    } catch (error) {
-      console.error(error);
-    }
-  }
+//   static async findByIds(productIds) {
+//     try {
+//       const db = getDb()
 
-  static async deleteById(productId) {
-    try {
-      const db = getDb()
+//       return await db.collection('products').find({ _id: { $in: productIds } }).toArray()
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
 
-      const r = await db.collection('products').deleteOne({ _id: new ObjectID(productId) })
+//   static async findById(productId) {
+//     try {
+//       const db = getDb()
 
-      console.log('r :', r);
+//       return await db.collection('products').findOne({ _id: new ObjectID(productId) })
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
 
-      return r
-    } catch (error) {
-      console.error(error);
-    }
-  }
-}
+//   static async deleteById(productId) {
+//     try {
+//       const db = getDb()
 
-module.exports = Product
+//       const r = await db.collection('products').deleteOne({ _id: new ObjectID(productId) })
+
+//       console.log('r :', r);
+
+//       return r
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
+// }
+
+// module.exports = Product

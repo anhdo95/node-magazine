@@ -1,21 +1,17 @@
-const { MongoClient } = require('mongodb')
+const { connect } = require('mongoose')
 
 let _db
 
-const mongoConnect = (cb) => {
+const mongooseConnect = (cb) => {
   const uri = 'mongodb+srv://admin:admin@node-complete-1dj8a.mongodb.net/shop?retryWrites=true&w=majority'
-  const client = new MongoClient(uri, { useUnifiedTopology: true })
+  const options = { useNewUrlParser: true, useUnifiedTopology: true }
 
-  client.connect(err => {
-    if (err) {
-      throw err
-    }
-
-    console.log('Connected!');
-    _db = client.db()
-  })
-
-  cb()
+  connect(uri, options)
+    .then(() => {
+      console.log('Connected!')
+      cb()
+    })
+    .catch(console.error())
 }
 
 const getDb = () => {
@@ -23,6 +19,6 @@ const getDb = () => {
   throw 'No database found!'
 }
 
-module.exports.mongoConnect = mongoConnect
+module.exports.mongooseConnect = mongooseConnect
 module.exports.getDb = getDb
 
