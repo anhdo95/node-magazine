@@ -86,6 +86,34 @@ class User {
     }
   }
 
+  async addOrder() {
+    try {
+      const db = getDb()
+
+      const inserted = await db.collection('orders').insertOne(this)
+
+      if (inserted) {
+        return await this.emptyCart()
+      }
+
+      throw 'Create an order failed'
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  async emptyCart() {
+    try {
+      const db = getDb()
+
+      return await db
+        .collection('users')
+        .updateOne({ _id: this._id }, { $set: { cart: { items: [] } } });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   static async fetchAll() {
     try {
       const db = getDb()
