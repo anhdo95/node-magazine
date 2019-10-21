@@ -1,12 +1,13 @@
 const { connect } = require('mongoose')
 
+const { MONGODB_URI } = require('./constant')
+
 let _db
 
 const mongooseConnect = (cb) => {
-  const uri = 'mongodb+srv://admin:admin@node-complete-1dj8a.mongodb.net/shop?retryWrites=true&w=majority'
   const options = { useNewUrlParser: true, useUnifiedTopology: true }
 
-  connect(uri, options)
+  connect(MONGODB_URI, options)
     .then(() => {
       console.log('Connected!')
       cb()

@@ -1,4 +1,5 @@
 const { Schema, Types, model } = require('mongoose');
+const Order = require('./order')
 
 const userSchema = new Schema({
   name: {
@@ -53,6 +54,38 @@ userSchema.methods.addToCart = function(product) {
 userSchema.methods.removeFromCart = function(productId) {
   this.cart.items = this.cart.items.filter(item => !item.productId.equals(productId))
   return this.save()
+}
+
+userSchema.methods.emptyCart = function() {
+  this.cart.items = []
+  return this.save()
+}
+
+userSchema.methods.addOrder = async function() {
+  const user = await this.populate('cart.items.productId').execPopulate()
+
+  const orderProps = {
+    user: {
+      userId: this,
+      name: this.name
+    },
+    products: user.cart.items.map(item => {
+      return {
+        quantity: item.quantity,
+        product: { ...item.productId }
+      }
+    })
+  }
+
+  const order = new Order(orderProps)
+
+  if (order.save()) {
+    return this.emptyCart()
+  }
+}
+
+userSchema.methods.getOrders = function() {
+  return Order.find({ 'user.userId': this._id })
 }
 
 module.exports = model('User', userSchema)
