@@ -30,7 +30,9 @@ form {
 
 .main-header__nav {
   height: 100%;
+  width: 100%;
   display: none;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -54,6 +56,19 @@ form {
 .main-header__item a:hover,
 .main-header__item a:active,
 .main-header__item a.active {
+  color: #ffeb3b;
+}
+
+.main-header__item-logout {
+  background-color: initial;
+  color: white;
+  font-size: 100%;
+  border: none;
+  outline: none;
+}
+
+.main-header__item-logout:hover {
+  cursor: pointer;
   color: #ffeb3b;
 }
 
