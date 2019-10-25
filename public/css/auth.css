@@ -4,3 +4,8 @@
   margin: auto;
   display: block;
 }
+
+.error-message {
+  text-align: center;
+  color: red;
+}
