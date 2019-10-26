@@ -1,8 +1,10 @@
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const sgTransport = require("nodemailer-sendgrid-transport");
+const { validationResult } = require('express-validator/check');
+
+const User = require("../models/user");
 // const { SENDGRID_API_KEY }  = require('../util/constant');
 
 const hoursToMilliseconds = (hours) => {
@@ -67,6 +69,16 @@ exports.postLogin = (req, res, next) => {
 
 exports.postSignup = (req, res, next) => {
   const { email, password, confirmPassword } = req.body;
+
+  const errors = validationResult(req)
+
+  if (!errors.isEmpty()) {
+    return res.render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      errors: errors.array()
+    });
+  }
 
   User.findOne({ email }).then(userDoc => {
     if (userDoc) {
