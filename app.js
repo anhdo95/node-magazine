@@ -64,7 +64,16 @@ app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get('/500', errorController.get500);
+
 app.use(errorController.get404);
+
+app.use((error, req, res, next) => {
+  if (error) {
+    // return res.status(error.httpStatusCode).render(...)
+    return res.redirect('/500')
+  }
+})
 
 mongoose
   .connect(MONGODB_URI)

@@ -96,7 +96,11 @@ exports.postSignup = (req, res, next) => {
 
       return mailer.sendMail(options);
     })
-    .catch(console.error);
+    .catch(error => {
+      error = new Error(error)
+      error.httpStatusCode = 500
+      next(error)
+    });
 };
 
 exports.postLogout = (req, res, next) => {
