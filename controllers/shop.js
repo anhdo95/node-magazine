@@ -135,8 +135,8 @@ exports.getInvoice = (req, res, next) => {
         return next(new Error("No order found!"));
       }
 
-      console.log('order.user.userId.toString()', order.user.userId.toString())
-      console.log('req.user._id.toString()', req.user._id.toString())
+      console.log("order.user.userId.toString()", order.user.userId.toString());
+      console.log("req.user._id.toString()", req.user._id.toString());
 
       if (order.user.userId.toString() !== req.user._id.toString()) {
         return next(new Error("Unauthorized!"));
@@ -145,14 +145,12 @@ exports.getInvoice = (req, res, next) => {
       const invoiceName = `invoice-${orderId}.pdf`;
       const invoicePath = path.join("data", "invoices", invoiceName);
 
-      return fs.readFile(invoicePath, (err, data) => {
-        if (err) return next(err);
+      const file = fs.createReadStream(invoicePath);
 
-        res.setHeader("Content-Type", "application/pdf");
-        // res.setHeader('Content-Disposition', `attachment; filename=${invoiceName}`)
-        res.setHeader("Content-Disposition", `inline`);
-        res.send(data);
-      });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline`);
+
+      file.pipe(res);
     })
     .catch(err => {
       const error = new Error(err);
