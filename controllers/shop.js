@@ -1,9 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const PDFDoc = require("pdfkit");
+const stripe = require('stripe')
 
 const Product = require("../models/product");
 const Order = require("../models/order");
+const { STRIPE_PK_API_KEY, STRIPE_SK_API_KEY } = require("../secret/config");
 const { ITEMS_PER_PAGE } = require("../util/constant");
 
 exports.getProducts = (req, res, next) => {
@@ -69,8 +71,6 @@ exports.getIndex = (req, res, next) => {
         }
       };
 
-      console.log("options", options);
-
       return res.render("shop/index", options);
     })
     .catch(console.log);
@@ -99,7 +99,6 @@ exports.postCart = (req, res, next) => {
       return req.user.addToCart(product);
     })
     .then(result => {
-      console.log(result);
       res.redirect("/cart");
     });
 };
@@ -114,13 +113,42 @@ exports.postCartDeleteProduct = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
+exports.getCheckout = (req, res, next) => {
+  req.user
+    .populate("cart.items.productId")
+    .execPopulate()
+    .then(user => {
+      const products = user.cart.items;
+      const totalSum = products.reduce((sum, item) => {
+        sum += item.quantity * item.productId.price;
+        return sum;
+      }, 0);
+
+      res.render("shop/checkout", {
+        path: "/checkout",
+        pageTitle: "Checkout",
+        products: products,
+        totalSum,
+        stripeApiKey: STRIPE_PK_API_KEY,
+      });
+    })
+    .catch(err => console.log(err));
+};
+
 exports.postOrder = (req, res, next) => {
+  const { stripeToken } = req.body;
+  let totalSum = 0
+
   req.user
     .populate("cart.items.productId")
     .execPopulate()
     .then(user => {
       const products = user.cart.items.map(i => {
-        return { quantity: i.quantity, product: { ...i.productId._doc } };
+        totalSum += (i.quantity * i.productId.price)
+
+        return {
+          quantity: i.quantity, product: { ...i.productId._doc }
+        };
       });
       const order = new Order({
         user: {
@@ -132,6 +160,16 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then(result => {
+      stripe(STRIPE_SK_API_KEY).charges.create({
+        amount: totalSum * 100,
+        currency: 'usd',
+        description: `Order Charge - ${new Date().toISOString()}`,
+        source: stripeToken,
+        metadata: {
+          orderId: result._id.toString()
+        }
+      })
+
       return req.user.clearCart();
     })
     .then(() => {
