@@ -1,12 +1,13 @@
 const fs = require("fs");
 const path = require("path");
 const PDFDoc = require("pdfkit");
-const stripe = require('stripe')
 
 const Product = require("../models/product");
 const Order = require("../models/order");
 const { STRIPE_PK_API_KEY, STRIPE_SK_API_KEY } = require("../secret/config");
 const { ITEMS_PER_PAGE } = require("../util/constant");
+
+const stripe = require('stripe')(STRIPE_SK_API_KEY)
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -113,26 +114,73 @@ exports.postCartDeleteProduct = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.getCheckout = (req, res, next) => {
+exports.getCheckout = async (req, res, next) => {
+  try {
+    const user =  await req.user.populate("cart.items.productId").execPopulate()
+    const products = user.cart.items;
+    const totalSum = products.reduce((sum, item) => {
+      return (sum += (item.quantity * item.productId.price));
+    }, 0);
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: products.map(p => {
+        return {
+          name: p.productId.title,
+          description: p.productId.description,
+          amount: p.productId.price * 100,
+          currency: 'usd',
+          quantity: p.quantity
+        };
+      }),
+      success_url: 'http://localhost:3000/checkout/success',
+      cancel_url: 'http://localhost:3000/checkout/cancel'
+    })
+
+    res.render("shop/checkout", {
+      path: "/checkout",
+      pageTitle: "Checkout",
+      products,
+      totalSum,
+      sessionId: session.id,
+      stripeApiKey: STRIPE_PK_API_KEY,
+    });
+
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
+  }
+};
+
+exports.getCheckoutSuccess = (req, res, next) => {
   req.user
-    .populate("cart.items.productId")
+    .populate('cart.items.productId')
     .execPopulate()
     .then(user => {
-      const products = user.cart.items;
-      const totalSum = products.reduce((sum, item) => {
-        sum += item.quantity * item.productId.price;
-        return sum;
-      }, 0);
-
-      res.render("shop/checkout", {
-        path: "/checkout",
-        pageTitle: "Checkout",
-        products: products,
-        totalSum,
-        stripeApiKey: STRIPE_PK_API_KEY,
+      const products = user.cart.items.map(i => {
+        return { quantity: i.quantity, product: { ...i.productId._doc } };
       });
+      const order = new Order({
+        user: {
+          email: req.user.email,
+          userId: req.user
+        },
+        products: products
+      });
+      return order.save();
     })
-    .catch(err => console.log(err));
+    .then(() => {
+      return req.user.clearCart();
+    })
+    .then(() => {
+      res.redirect('/orders');
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postOrder = (req, res, next) => {
@@ -160,7 +208,7 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then(result => {
-      stripe(STRIPE_SK_API_KEY).charges.create({
+      stripe.charges.create({
         amount: totalSum * 100,
         currency: 'usd',
         description: `Order Charge - ${new Date().toISOString()}`,
