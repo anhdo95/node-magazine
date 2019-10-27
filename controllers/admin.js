@@ -6,7 +6,6 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: 'Add Product',
     path: '/admin/add-product',
     editing: false,
-    isAuthenticated: req.session.isLoggedIn
   });
 };
 
@@ -86,7 +85,6 @@ exports.getProducts = (req, res, next) => {
     // .select('title price -_id')
     // .populate('userId', 'name')
     .then(products => {
-      console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -97,13 +95,22 @@ exports.getProducts = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.postDeleteProduct = (req, res, next) => {
-  const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
+exports.deleteProduct = (req, res, next) => {
+  const { productId } = req.params;
+
+  console.log('productId', productId)
+
+  Product.findByIdAndRemove(productId)
     .then((product) => {
       fileHelper.deleteFile(product.imageUrl)
       console.log('DESTROYED PRODUCT');
-      res.redirect('/admin/products');
+      res.status(200).json({
+        message: 'Success!'
+      })
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      res.status(500).json({
+        message: 'Deleting product failed.'
+      })
+    });
 };
