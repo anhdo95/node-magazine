@@ -92,6 +92,24 @@ form {
   color: #ffeb3b;
 }
 
+.pagination {
+  margin: 2em 0;
+}
+
+.pagination__link {
+  display: inline-block;
+  margin-right: 0.25em;
+  padding: 8px 16px;
+  color: #fff;
+  background-color: #00695c;
+  text-decoration: none;
+}
+
+.pagination__link--active,
+.pagination__link:hover {
+  background-color: #00495c;
+}
+
 .mobile-nav {
   width: 30rem;
   height: 100vh;

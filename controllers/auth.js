@@ -5,7 +5,7 @@ const sgTransport = require("nodemailer-sendgrid-transport");
 const { validationResult } = require("express-validator");
 
 const User = require("../models/user");
-// const { SENDGRID_API_KEY }  = require('../util/constant');
+const { SENDGRID_API_KEY }  = require('../secret/config');
 
 const hoursToMilliseconds = hours => {
   return hours * 60 * 60 * 1000;
@@ -14,7 +14,7 @@ const hoursToMilliseconds = hours => {
 const mailer = nodemailer.createTransport(
   sgTransport({
     auth: {
-      // api_key: SENDGRID_API_KEY
+      api_key: SENDGRID_API_KEY
     }
   })
 );

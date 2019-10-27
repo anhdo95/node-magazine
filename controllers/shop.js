@@ -4,6 +4,7 @@ const PDFDoc = require("pdfkit");
 
 const Product = require("../models/product");
 const Order = require("../models/order");
+const { ITEMS_PER_PAGE } = require("../util/constant");
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -36,19 +37,43 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find()
+  const { page = 1 } = req.query;
+  const currentPage = Number(page);
+
+  let totalProducts;
+
+  return Product.find()
+    .countDocuments()
+    .then(totalItems => {
+      totalProducts = totalItems;
+      return Product.find()
+        .skip((currentPage - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
     .then(products => {
-      res.render("shop/index", {
+      const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+
+      const options = {
         prods: products,
         pageTitle: "Shop",
-        path: "/"
-        // isAuthenticated: req.session.isLoggedIn,
-        // csrfToken: req.csrfToken()
-      });
+        path: "/",
+        pagination: {
+          currentPage,
+          totalProducts,
+          totalPages,
+          hasNextPage: currentPage < totalPages,
+          hasPreviousPage: currentPage > 1,
+          nextPage: currentPage + 1,
+          previousPage: currentPage - 1,
+          lastPage: totalPages
+        }
+      };
+
+      console.log("options", options);
+
+      return res.render("shop/index", options);
     })
-    .catch(err => {
-      console.log(err);
-    });
+    .catch(console.log);
 };
 
 exports.getCart = (req, res, next) => {

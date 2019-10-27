@@ -1,0 +1,19 @@
+<% if (pagination.totalPages) { %>
+    <section class="centered pagination">
+        <% if (pagination.hasPreviousPage) { %>
+            <a class="pagination__link" href="?page=<%= pagination.previousPage %>">Previous</a>
+        <% } %>
+
+        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+            <% if (pagination.currentPage == i) { %>
+                <a class="pagination__link pagination__link--active"><%= i %></a>
+            <% } else { %>
+                <a class="pagination__link" href="?page=<%= i %>"><%= i %></a>
+            <% } %>
+        <% } %>
+
+        <% if (pagination.hasNextPage) { %>
+            <a class="pagination__link" href="?page=<%= pagination.nextPage %>">Next</a>
+        <% } %>
+    </section>
+<% } %>
