@@ -2,18 +2,37 @@ const { validationResult } = require('express-validator')
 
 const Post = require('../models/feed')
 
-module.exports.getPosts = (req, res, next) => {
-  res.status(200).json({
-    posts: [{
-      _id: new Date().toISOString(),
-      title: 'The first post',
-      content: 'This first content post',
-      creator: {
-        name: 'Richard Do'
-      },
-      createdAt: new Date()
-    }]
-  })
+module.exports.getPosts = async (req, res, next) => {
+  try {
+    const posts = await Post.find()
+
+    res.status(200).json({
+      message: 'Fetched posts successfully',
+      posts
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports.getPostById = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.postId)
+
+    if (!post) {
+      const error = new Error('Could not find post.')
+      error.statusCode = 404
+
+      throw error
+    }
+
+    res.status(200).json({
+      message: 'Fetched post successfully',
+      post
+    })
+  } catch (error) {
+    next(error)
+  }
 }
 
 module.exports.createPost = async (req, res, next) => {
