@@ -5,7 +5,9 @@ module.exports.resolve = (relativePath) => path.resolve(__dirname, '..', relativ
 
 module.exports.deleteFile = (filePath) => {
   if (filePath) {
-    fs.unlink(filePath, error => {
+    const existed = fs.existsSync(filePath)
+
+    existed && fs.unlink(filePath, error => {
       error && console.log(error)
     })
   }

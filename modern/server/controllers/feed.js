@@ -108,3 +108,22 @@ module.exports.updatePost = async (req, res, next) => {
 		next(error)
 	}
 }
+
+module.exports.deletePost = async (req, res, next) => {
+  try {
+    const deletedPost = await Post.findByIdAndDelete(req.params.postId)
+
+    if (!deletedPost) {
+      throw exception.notFound('Could not found post.')
+    }
+
+    fileHelper.deleteFile(fileHelper.resolve(deletedPost.imageUrl))
+
+    res.status(200).json({
+			message: 'Deleted post successfully',
+			post: deletedPost,
+		})
+  } catch (error) {
+    next(error)
+  }
+}
