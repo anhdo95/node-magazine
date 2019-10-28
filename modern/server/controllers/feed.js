@@ -1,3 +1,4 @@
+const path = require('path')
 const { validationResult } = require('express-validator')
 
 const Post = require('../models/feed')
@@ -36,23 +37,30 @@ module.exports.getPostById = async (req, res, next) => {
 }
 
 module.exports.createPost = async (req, res, next) => {
-  const errors = validationResult(req)
-
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect.')
-    error.statusCode = 422
-    error.errors = errors.array()
-
-    return next(error)
-  }
-
-  const { title, content } = req.body;
-
   try {
+    const errors = validationResult(req)
+
+    if (!errors.isEmpty()) {
+      const error = new Error('Validation failed, entered data is incorrect.')
+      error.statusCode = 422
+      error.errors = errors.array()
+
+      throw error
+    }
+
+    const { title, content } = req.body;
+
+    if (!req.file) {
+      const error = new Error('No image provided')
+      error.statusCode = 422
+
+      throw error
+    }
+
     const createdPost = await new Post({
       title,
       content,
-      imageUrl: 'images/feed.jpg',
+      imageUrl: req.file.path.replace('\\' ,'/'),
       creator: {
         name: 'Richard Do',
       },

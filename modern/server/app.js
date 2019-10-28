@@ -2,6 +2,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const path = require('path')
+const multer = require('multer')
+const uuidv4 = require('uuid/v4')
 
 const feedRoutes = require('./routes/feed')
 const { MONGODB_URI } = require('./secret/config')
@@ -9,6 +11,23 @@ const { MONGODB_URI } = require('./secret/config')
 const app = express()
 
 app.use(bodyParser.json())
+app.use(
+	multer({
+		storage: multer.diskStorage({
+			destination(req, file, cb) {
+				cb(null, 'images')
+			},
+			filename(req, file, cb) {
+				cb(null, `${uuidv4()}-${file.originalname}`)
+			},
+		}),
+		fileFilter(req, file, cb) {
+			const allowedExtensions = ['image/png', 'image/jpg', 'image/jpeg']
+
+			cb(null, allowedExtensions.includes(file.mimetype))
+		},
+	}).single('image')
+)
 app.use('/images', express.static(path.join(__dirname, 'images')))
 
 app.use((req, res, next) => {
