@@ -2,6 +2,7 @@ const path = require('path')
 const { validationResult } = require('express-validator')
 
 const fileHelper = require('../util/file')
+const { ITEMS_PER_PAGE } = require('../util/constants')
 const exception = require('../exception')
 const Post = require('../models/feed')
 
@@ -15,11 +16,15 @@ const validatePost = (req) => {
 
 module.exports.getPosts = async (req, res, next) => {
 	try {
-		const posts = await Post.find()
+    const totalItems = await Post.find().countDocuments()
+    const pagedPosts = await Post.find()
+			.skip((req.query.page - 1) * ITEMS_PER_PAGE)
+			.limit(ITEMS_PER_PAGE)
 
 		res.status(200).json({
 			message: 'Fetched posts successfully',
-			posts,
+      posts: pagedPosts,
+      totalItems,
 		})
 	} catch (error) {
 		next(error)

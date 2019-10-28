@@ -15,3 +15,10 @@ module.exports.notFound = (errorMessage) => {
 
   return error
 }
+
+module.exports.unauthorized = (errorMessage) => {
+	const error = new Error(errorMessage)
+	error.statusCode = 401
+
+  return error
+}
