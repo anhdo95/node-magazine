@@ -10,7 +10,7 @@ import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
 
-import { DOMAIN } from '../../util/constants'
+import { DOMAIN, ITEMS_PER_PAGE } from '../../util/constants'
 
 class Feed extends Component {
   state = {
@@ -46,8 +46,16 @@ class Feed extends Component {
     const socket = openSocket(DOMAIN)
 
     socket.on('posts', (data) => {
-      if (data.action === 'create') {
-        this.addPost(data.post)
+      console.log('data :', data);
+      switch (data.action) {
+        case 'create':
+          return this.addPost(data.post)
+
+        case 'update':
+          return this.updatePost(data.post)
+
+        default:
+          return data
       }
     })
   }
@@ -57,11 +65,28 @@ class Feed extends Component {
       const updatedPosts = [ ...prevState.posts ]
       if (prevState.postPage === 1) {
         updatedPosts.unshift(post)
+        updatedPosts.splice(ITEMS_PER_PAGE)
       }
 
       return {
         posts: updatedPosts,
         totalPosts: prevState.totalPosts++
+      }
+    })
+  }
+
+  updatePost = (post) => {
+    this.setState(prevState => {
+      const updatedPosts = prevState.posts.map(p => {
+        if (p._id === post._id) {
+          return post
+        }
+
+        return p
+      })
+
+      return {
+        posts: updatedPosts
       }
     })
   }

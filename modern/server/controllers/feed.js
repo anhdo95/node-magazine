@@ -18,15 +18,16 @@ const validatePost = (req) => {
 
 module.exports.getPosts = async (req, res, next) => {
 	try {
-    const totalItems = await Post.find().countDocuments()
-    const pagedPosts = await Post.find()
+		const totalItems = await Post.find().countDocuments()
+		const pagedPosts = await Post.find()
+			.populate('creator')
 			.skip((req.query.page - 1) * ITEMS_PER_PAGE)
 			.limit(ITEMS_PER_PAGE)
 
 		res.status(200).json({
 			message: 'Fetched posts successfully',
-      posts: pagedPosts,
-      totalItems,
+			posts: pagedPosts,
+			totalItems,
 		})
 	} catch (error) {
 		next(error)
@@ -65,21 +66,28 @@ module.exports.createPost = async (req, res, next) => {
 			content,
 			imageUrl: req.file.path.replace('\\', '/'),
 			creator: req.userId,
-    }).save()
+		}).save()
 
-    const creator = await User.findById(req.userId)
-    creator.posts.push(createdPost)
+		const creator = await User.findById(req.userId)
+		creator.posts.push(createdPost)
     creator.save()
 
-    io.getIO().emit('posts', { action: 'create', post: createdPost })
+    const postData = {
+      ...createdPost._doc,
+      creator: {
+        _id: creator._id,
+        name: creator.name,
+      },
+    }
+
+		io.getIO().emit('posts', {
+			action: 'create',
+			post: postData,
+		})
 
 		res.status(201).json({
 			message: 'Post created successfully!',
-      post: createdPost,
-      creator: {
-        _id: creator._id,
-        name: creator.name
-      }
+			post: postData,
 		})
 	} catch (error) {
 		next(error)
@@ -103,11 +111,11 @@ module.exports.updatePost = async (req, res, next) => {
 
 		if (!postToUpdate) {
 			throw exception.notFound('Could not found post.')
-    }
+		}
 
-    if (!postToUpdate.creator.equals(req.userId)) {
-      throw exception.unauthorized()
-    }
+		if (!postToUpdate.creator.equals(req.userId)) {
+			throw exception.unauthorized()
+		}
 
 		if (postToUpdate.imageUrl !== imageUrl) {
 			fileHelper.deleteFile(fileHelper.resolve(postToUpdate.imageUrl))
@@ -117,11 +125,21 @@ module.exports.updatePost = async (req, res, next) => {
 		postToUpdate.content = req.body.content
 		postToUpdate.imageUrl = imageUrl
 
-		postToUpdate.save()
+    postToUpdate.save()
+
+    const postData = {
+      ...postToUpdate._doc,
+      creator: await User.findById(req.userId).select('name'),
+    }
+
+    io.getIO().emit('posts', {
+			action: 'update',
+			post: postData,
+		})
 
 		res.status(200).json({
 			message: 'Updated post successfully',
-			post: postToUpdate,
+			post: postData,
 		})
 	} catch (error) {
 		next(error)
@@ -129,31 +147,31 @@ module.exports.updatePost = async (req, res, next) => {
 }
 
 module.exports.deletePost = async (req, res, next) => {
-  try {
+	try {
 		const { postId } = req.params
-    const postToDelete = await Post.findById(postId)
+		const postToDelete = await Post.findById(postId)
 
-    if (!postToDelete) {
-      throw exception.notFound('Could not found post.')
-    }
+		if (!postToDelete) {
+			throw exception.notFound('Could not found post.')
+		}
 
-    if (!postToDelete.creator.equals(req.userId)) {
-      throw exception.unauthorized()
-    }
+		if (!postToDelete.creator.equals(req.userId)) {
+			throw exception.unauthorized()
+		}
 
-    await Post.deleteOne({ _id: postId })
+		await Post.deleteOne({ _id: postId })
 
 		const creator = await User.findById(req.userId)
 		creator.posts.pull(postId)
-    creator.save()
+		creator.save()
 
-    fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+		fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
 
-    res.status(200).json({
+		res.status(200).json({
 			message: 'Deleted post successfully',
 			post: postToDelete,
 		})
-  } catch (error) {
-    next(error)
-  }
+	} catch (error) {
+		next(error)
+	}
 }
