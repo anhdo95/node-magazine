@@ -5,6 +5,7 @@ const fileHelper = require('../util/file')
 const { ITEMS_PER_PAGE } = require('../util/constants')
 const exception = require('../exception')
 const Post = require('../models/feed')
+const User = require('../models/user')
 
 const validatePost = (req) => {
 	const errors = validationResult(req)
@@ -62,14 +63,20 @@ module.exports.createPost = async (req, res, next) => {
 			title,
 			content,
 			imageUrl: req.file.path.replace('\\', '/'),
-			creator: {
-				name: 'Richard Do',
-			},
-		}).save()
+			creator: req.userId,
+    }).save()
+
+    const creator = await User.findById(req.userId)
+    creator.posts.push(createdPost)
+    creator.save()
 
 		res.status(201).json({
 			message: 'Post created successfully!',
-			post: createdPost,
+      post: createdPost,
+      creator: {
+        _id: creator._id,
+        name: creator.name
+      }
 		})
 	} catch (error) {
 		next(error)

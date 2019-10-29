@@ -1,4 +1,4 @@
-const { Schema, model } = require('mongoose')
+const { Schema, model, Types } = require('mongoose')
 
 const feedSchema = new Schema({
   title: {
@@ -14,7 +14,8 @@ const feedSchema = new Schema({
     required: true
   },
   creator: {
-    type: Object,
+    type: Types.ObjectId,
+    ref: 'User',
     required: true
   },
 }, { timestamps: true })
