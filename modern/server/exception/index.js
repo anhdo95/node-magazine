@@ -1,10 +1,7 @@
 module.exports.invalidInput = (errorMessage, errors) => {
 	const error = new Error(errorMessage)
   error.statusCode = 422
-
-  if (errors) {
-    error.errors = errors
-  }
+  error.errors = errors
 
   return error
 }
