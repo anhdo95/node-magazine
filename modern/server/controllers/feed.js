@@ -1,6 +1,7 @@
 const path = require('path')
 const { validationResult } = require('express-validator')
 
+const io = require('../socket')
 const fileHelper = require('../util/file')
 const { ITEMS_PER_PAGE } = require('../util/constants')
 const exception = require('../exception')
@@ -69,6 +70,8 @@ module.exports.createPost = async (req, res, next) => {
     const creator = await User.findById(req.userId)
     creator.posts.push(createdPost)
     creator.save()
+
+    io.getIO().emit('posts', { action: 'create', post: createdPost })
 
 		res.status(201).json({
 			message: 'Post created successfully!',
