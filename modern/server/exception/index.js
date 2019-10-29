@@ -13,9 +13,16 @@ module.exports.notFound = (errorMessage) => {
   return error
 }
 
-module.exports.unauthorized = (errorMessage) => {
+module.exports.unauthenticated = (errorMessage = 'Not authenticated.') => {
 	const error = new Error(errorMessage)
 	error.statusCode = 401
+
+  return error
+}
+
+module.exports.unauthorized = (errorMessage = 'Not authorized.') => {
+	const error = new Error(errorMessage)
+	error.statusCode = 403
 
   return error
 }

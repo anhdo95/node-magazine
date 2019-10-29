@@ -43,7 +43,7 @@ module.exports.login = async (req, res, next) => {
     const user = await User.findOne({ email: req.body.email })
 
     if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
-      throw exception.unauthorized('This account could not be found.')
+      throw exception.unauthenticated('This account could not be found.')
     }
 
     const token = jwt.sign({

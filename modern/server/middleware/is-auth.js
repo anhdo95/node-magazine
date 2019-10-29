@@ -8,7 +8,7 @@ module.exports = (req, res, next) => {
     const authHeader = req.get('Authorization')
 
     if (!authHeader) {
-      throw exception.unauthorized('Not authenticated.')
+      throw exception.unauthenticated()
     }
 
     const [bearer, token] = authHeader.split(' ')
@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
     const decodedToken = jwt.verify(token, SECRET_JWT_KEY)
 
     if (!decodedToken) {
-      throw exception.unauthorized('Not authenticated.')
+      throw exception.unauthenticated()
     }
 
     req.userId = decodedToken.userId

@@ -100,7 +100,11 @@ module.exports.updatePost = async (req, res, next) => {
 
 		if (!postToUpdate) {
 			throw exception.notFound('Could not found post.')
-		}
+    }
+
+    if (!postToUpdate.creator.equals(req.userId)) {
+      throw exception.unauthorized()
+    }
 
 		if (postToUpdate.imageUrl !== imageUrl) {
 			fileHelper.deleteFile(fileHelper.resolve(postToUpdate.imageUrl))
@@ -127,6 +131,10 @@ module.exports.deletePost = async (req, res, next) => {
 
     if (!deletedPost) {
       throw exception.notFound('Could not found post.')
+    }
+
+    if (!deletedPost.creator.equals(req.userId)) {
+      throw exception.unauthorized()
     }
 
     fileHelper.deleteFile(fileHelper.resolve(deletedPost.imageUrl))
