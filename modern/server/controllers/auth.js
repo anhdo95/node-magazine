@@ -1,4 +1,3 @@
-const path = require('path')
 const bcrypt = require('bcryptjs')
 const { validationResult } = require('express-validator')
 const jwt = require('jsonwebtoken')
@@ -59,4 +58,3 @@ module.exports.login = async (req, res, next) => {
 		next(error)
 	}
 }
-
