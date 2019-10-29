@@ -127,21 +127,28 @@ module.exports.updatePost = async (req, res, next) => {
 
 module.exports.deletePost = async (req, res, next) => {
   try {
-    const deletedPost = await Post.findByIdAndDelete(req.params.postId)
+		const { postId } = req.params
+    const postToDelete = await Post.findById(postId)
 
-    if (!deletedPost) {
+    if (!postToDelete) {
       throw exception.notFound('Could not found post.')
     }
 
-    if (!deletedPost.creator.equals(req.userId)) {
+    if (!postToDelete.creator.equals(req.userId)) {
       throw exception.unauthorized()
     }
 
-    fileHelper.deleteFile(fileHelper.resolve(deletedPost.imageUrl))
+    await Post.deleteOne({ _id: postId })
+
+		const creator = await User.findById(req.userId)
+		creator.posts.pull(postId)
+    creator.save()
+
+    fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
 
     res.status(200).json({
 			message: 'Deleted post successfully',
-			post: deletedPost,
+			post: postToDelete,
 		})
   } catch (error) {
     next(error)
