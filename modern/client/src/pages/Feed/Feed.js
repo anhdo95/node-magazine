@@ -46,13 +46,15 @@ class Feed extends Component {
     const socket = openSocket(DOMAIN)
 
     socket.on('posts', (data) => {
-      console.log('data :', data);
       switch (data.action) {
         case 'create':
           return this.addPost(data.post)
 
         case 'update':
           return this.updatePost(data.post)
+
+        case 'delete':
+            return this.loadPosts()
 
         default:
           return data
@@ -77,13 +79,12 @@ class Feed extends Component {
 
   updatePost = (post) => {
     this.setState(prevState => {
-      const updatedPosts = prevState.posts.map(p => {
-        if (p._id === post._id) {
-          return post
-        }
+      const updatedPosts = [ ...prevState.posts ]
+      const updatedPostIndex = updatedPosts.findIndex(p => p._id === post._id)
 
-        return p
-      })
+      if (~updatedPostIndex) {
+        updatedPosts[updatedPostIndex] = post
+      }
 
       return {
         posts: updatedPosts
@@ -201,25 +202,9 @@ class Feed extends Component {
         }
         return res.json();
       })
-      .then(resData => {
-        const post = {
-          _id: resData.post._id,
-          title: resData.post.title,
-          content: resData.post.content,
-          creator: resData.post.creator,
-          createdAt: resData.post.createdAt
-        };
-        this.setState(prevState => {
-          let updatedPosts = [...prevState.posts];
-          if (prevState.editPost) {
-            const postIndex = prevState.posts.findIndex(
-              p => p._id === prevState.editPost._id
-            );
-            updatedPosts[postIndex] = post;
-          }
-
+      .then(() => {
+        this.setState(() => {
           return {
-            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
@@ -257,10 +242,6 @@ class Feed extends Component {
       })
       .then(resData => {
         console.log(resData);
-        this.setState(prevState => {
-          const updatedPosts = prevState.posts.filter(p => p._id !== postId);
-          return { posts: updatedPosts, postsLoading: false };
-        });
       })
       .catch(err => {
         console.log(err);

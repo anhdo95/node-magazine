@@ -20,7 +20,8 @@ module.exports.getPosts = async (req, res, next) => {
 	try {
 		const totalItems = await Post.find().countDocuments()
 		const pagedPosts = await Post.find()
-			.populate('creator')
+      .populate('creator')
+      .sort({ createdAt: -1 })
 			.skip((req.query.page - 1) * ITEMS_PER_PAGE)
 			.limit(ITEMS_PER_PAGE)
 
@@ -72,22 +73,19 @@ module.exports.createPost = async (req, res, next) => {
 		creator.posts.push(createdPost)
     creator.save()
 
-    const postData = {
-      ...createdPost._doc,
-      creator: {
-        _id: creator._id,
-        name: creator.name,
-      },
-    }
-
 		io.getIO().emit('posts', {
 			action: 'create',
-			post: postData,
+			post: {
+        ...createdPost._doc,
+        creator: {
+          _id: creator._id,
+          name: creator.name,
+        },
+      },
 		})
 
 		res.status(201).json({
 			message: 'Post created successfully!',
-			post: postData,
 		})
 	} catch (error) {
 		next(error)
@@ -107,13 +105,13 @@ module.exports.updatePost = async (req, res, next) => {
 			throw exception.invalidInput('No file picked.')
 		}
 
-		const postToUpdate = await Post.findById(req.params.postId)
+		const postToUpdate = await Post.findById(req.params.postId).populate('creator')
 
 		if (!postToUpdate) {
 			throw exception.notFound('Could not found post.')
 		}
 
-		if (!postToUpdate.creator.equals(req.userId)) {
+		if (!postToUpdate.creator._id.equals(req.userId)) {
 			throw exception.unauthorized()
 		}
 
@@ -127,19 +125,13 @@ module.exports.updatePost = async (req, res, next) => {
 
     postToUpdate.save()
 
-    const postData = {
-      ...postToUpdate._doc,
-      creator: await User.findById(req.userId).select('name'),
-    }
-
     io.getIO().emit('posts', {
 			action: 'update',
-			post: postData,
+			post: postToUpdate,
 		})
 
 		res.status(200).json({
 			message: 'Updated post successfully',
-			post: postData,
 		})
 	} catch (error) {
 		next(error)
@@ -165,11 +157,12 @@ module.exports.deletePost = async (req, res, next) => {
 		creator.posts.pull(postId)
 		creator.save()
 
-		fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+    fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+
+    io.getIO().emit('posts', { action: 'delete', postId })
 
 		res.status(200).json({
 			message: 'Deleted post successfully',
-			post: postToDelete,
 		})
 	} catch (error) {
 		next(error)
