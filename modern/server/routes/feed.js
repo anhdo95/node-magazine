@@ -8,38 +8,40 @@ const router = express.Router()
 
 router.get('/posts', isAuth, feedController.getPosts)
 
-router.get('/post/:postId', feedController.getPostById)
+router.get('/post/:postId', isAuth, feedController.getPostById)
 
 router.post(
 	'/post',
+	isAuth,
 	[
 		body('title')
 			.trim()
-      .isLength({ min: 5 })
-      .withMessage('The title at least must be 5 characters.'),
+			.isLength({ min: 5 })
+			.withMessage('The title at least must be 5 characters.'),
 		body('content')
 			.trim()
-      .isLength({ min: 5 })
-      .withMessage('The content at least must be 5 characters.'),
+			.isLength({ min: 5 })
+			.withMessage('The content at least must be 5 characters.'),
 	],
 	feedController.createPost
 )
 
 router.put(
 	'/post/:postId',
+	isAuth,
 	[
 		body('title')
 			.trim()
-      .isLength({ min: 5 })
-      .withMessage('The title at least must be 5 characters.'),
+			.isLength({ min: 5 })
+			.withMessage('The title at least must be 5 characters.'),
 		body('content')
 			.trim()
-      .isLength({ min: 5 })
-      .withMessage('The content at least must be 5 characters.'),
+			.isLength({ min: 5 })
+			.withMessage('The content at least must be 5 characters.'),
 	],
 	feedController.updatePost
 )
 
-router.delete('/post/:postId', feedController.deletePost)
+router.delete('/post/:postId', isAuth, feedController.deletePost)
 
 module.exports = router
