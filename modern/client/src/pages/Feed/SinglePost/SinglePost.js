@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 import Image from '../../../components/Image/Image';
+import { GRAPHQL_URL } from '../../../util/constants';
 import './SinglePost.css';
 
 class SinglePost extends Component {
@@ -14,10 +15,23 @@ class SinglePost extends Component {
 
   componentDidMount() {
     const postId = this.props.match.params.postId;
-    fetch(`http://localhost:8080/feed/post/${postId}`, {
+
+    const graphQlQuery = {
+      query: ` {
+          post(id: "${postId}") {
+            title, content, imageUrl, creator { name }, createdAt
+          }
+        }
+      `
+    }
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${this.props.token}`
-      }
+      },
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
         if (res.status !== 200) {
@@ -27,11 +41,11 @@ class SinglePost extends Component {
       })
       .then(resData => {
         this.setState({
-          title: resData.post.title,
-          author: resData.post.creator.name,
-          image: `http://localhost:8080/${resData.post.imageUrl}`,
-          date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
-          content: resData.post.content
+          title: resData.data.post.title,
+          author: resData.data.post.creator.name,
+          image: `http://localhost:8080/${resData.data.post.imageUrl}`,
+          date: new Date(resData.data.post.createdAt).toLocaleDateString('en-US'),
+          content: resData.data.post.content
         });
       })
       .catch(err => {

@@ -23,56 +23,61 @@ const getUserValidationErrors = ({ email, name, password }) => {
 }
 
 module.exports = {
-  login: async ({ email, password }, req) => {
-    const user = await User.findOne({ email })
+	login: async ({ email, password }, req) => {
+		const user = await User.findOne({ email })
 
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      throw exception.notFound('User could not be found!')
-    }
+		if (!user || !(await bcrypt.compare(password, user.password))) {
+			throw exception.notFound('User could not be found!')
+		}
 
-    const token = jwt.sign({
-      email,
-      userId: user._id,
-    }, SECRET_JWT_KEY, { expiresIn: '1h' })
+		const token = jwt.sign(
+			{
+				email,
+				userId: user._id,
+			},
+			SECRET_JWT_KEY,
+			{ expiresIn: '1h' }
+		)
 
-    req.userId = user._id
+		req.userId = user._id
 
-    return {
-      token, userId: user._id
-    }
-  },
+		return {
+			token,
+			userId: user._id,
+		}
+	},
 
-  createUser: async ({ userInput }, req) => {
-    const errors = getUserValidationErrors(userInput)
+	createUser: async ({ userInput }, req) => {
+		const errors = getUserValidationErrors(userInput)
 
-    if (errors.length) {
-      throw exception.invalidInput('Input invalid', errors)
-    }
+		if (errors.length) {
+			throw exception.invalidInput('Input invalid', errors)
+		}
 
-    const existingUser = await User.findOne({ email: userInput.email })
+		const existingUser = await User.findOne({ email: userInput.email })
 
-    if (existingUser) {
-      throw exception.invalidInput('User exists already!')
-    }
+		if (existingUser) {
+			throw exception.invalidInput('User exists already!')
+		}
 
 		const hashedPassword = await bcrypt.hash(userInput.password, 12)
 
 		const createdUser = await User({
 			email: userInput.email,
-      name: userInput.name,
+			name: userInput.name,
 			password: hashedPassword,
-    }).save()
+		}).save()
 
-    return createdUser
-  },
+		return createdUser
+	},
 
-  createPost: async ({ postInput }, req) => {
-    if (!req.isAuth) {
-      throw exception.unauthenticated('Not authenticated.')
-    }
+	createPost: async ({ postInput }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
+		}
 
-    // TODO: Validate inputs
-    const { title, content, imageUrl } = postInput
+		// TODO: Validate inputs
+		const { title, content, imageUrl } = postInput
 
 		// if (!req.file) {
 		// 	throw exception.invalidInput('No image provided')
@@ -84,46 +89,64 @@ module.exports = {
 			// imageUrl: req.file.path.replace('\\', '/'),
 			imageUrl,
 			creator: req.userId,
-    }).save()
+		}).save()
 
-    const creator = await User.findById(req.userId)
+		const creator = await User.findById(req.userId)
 
-    if (!creator) {
-      throw exception.unauthenticated('Not authenticated.')
-    }
+		if (!creator) {
+			throw exception.unauthenticated('Not authenticated.')
+		}
 
 		creator.posts.push(createdPost)
-    creator.save()
+		creator.save()
 
-    return {
+		return {
 			...createdPost._doc,
 			createdAt: createdPost.createdAt.toISOString(),
 			updatedAt: createdPost.updatedAt.toISOString(),
 			creator,
 		}
-  },
+	},
 
-  posts: async ({ queryInput }, req) => {
-    if (!req.isAuth) {
-      throw exception.unauthenticated('Not authenticated.')
-    }
+	posts: async ({ queryInput }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
+		}
 
-    const totalItems = await Post.find().countDocuments()
+		const totalItems = await Post.find().countDocuments()
 
-    const { page = 1, itemsPerPage = ITEMS_PER_PAGE } = queryInput
+		const { page = 1, itemsPerPage = ITEMS_PER_PAGE } = queryInput
 		const pagedPosts = await Post.find()
-      .populate('creator')
-      .sort({ createdAt: -1 })
+			.populate('creator')
+			.sort({ createdAt: -1 })
 			.skip((page - 1) * itemsPerPage)
 			.limit(itemsPerPage)
 
 		return {
-      items: pagedPosts.map(post => ({
-        ...post._doc,
-        createdAt: post.createdAt.toISOString(),
-			  updatedAt: post.updatedAt.toISOString(),
-      })),
-      totalItems,
-    }
-  }
+			items: pagedPosts.map((post) => ({
+				...post._doc,
+				createdAt: post.createdAt.toISOString(),
+				updatedAt: post.updatedAt.toISOString(),
+			})),
+			totalItems,
+		}
+	},
+
+	post: async ({ id }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
+		}
+
+		const post = await Post.findById(id).populate('creator')
+
+		if (!post) {
+			throw exception.notFound('Could not find post.')
+		}
+
+		return {
+			...post._doc,
+			createdAt: post.createdAt.toISOString(),
+			updatedAt: post.updatedAt.toISOString(),
+		}
+	},
 }
