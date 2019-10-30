@@ -9,7 +9,7 @@ import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
 
-import { DOMAIN, GRAPHQL_URL } from '../../util/constants'
+import { DOMAIN, GRAPHQL_URL, ITEMS_PER_PAGE } from '../../util/constants'
 
 class Feed extends Component {
   state = {
@@ -56,24 +56,38 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch(`http://localhost:8080/feed/posts?page=${page}`, {
+
+    const graphQlQuery = {
+      query: `
+        {
+          posts(queryInput: { page: ${page}, itemsPerPage: ${ITEMS_PER_PAGE} }) {
+            items {
+              _id, title, creator { name }, createdAt
+            }, totalItems
+          }
+        }
+      `
+    }
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.props.token}`
-      }
+      },
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.');
-        }
         return res.json();
       })
       .then(resData => {
+        console.log('resData :', resData);
         this.setState({
-          posts: resData.posts.map(post => ({
+          posts: resData.data.posts.items.map(post => ({
             ...post,
             imagePath: post.imageUrl
           })),
-          totalPosts: resData.totalItems,
+          totalPosts: resData.data.posts.totalItems,
           postsLoading: false
         });
       })
@@ -162,10 +176,16 @@ class Feed extends Component {
       .then(res => {
         return res.json();
       })
-      .then((data) => {
+      .then((resData) => {
         this.setState((prevState) => {
-          const updatedPosts = [ prevState.posts ]
-          updatedPosts.push(data.createPost)
+          const updatedPosts = [ ...prevState.posts ]
+
+          if (resData.data.createPost) {
+            if (prevState.postPage === 1) {
+              updatedPosts.unshift(resData.data.createPost)
+              updatedPosts.splice(ITEMS_PER_PAGE)
+            }
+          }
 
           return {
             posts: updatedPosts,

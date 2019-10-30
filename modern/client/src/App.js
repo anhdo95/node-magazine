@@ -13,7 +13,7 @@ import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import './App.css';
 
-import { GRAPHQL_URL, DOMAIN } from './util/constants';
+import { GRAPHQL_URL } from './util/constants';
 
 class App extends Component {
   state = {

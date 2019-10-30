@@ -3,6 +3,7 @@ const validator = require('validator')
 const jwt = require('jsonwebtoken')
 
 const { SECRET_JWT_KEY } = require('../secret/config')
+const { ITEMS_PER_PAGE } = require('../util/constants')
 const exception = require('../exception')
 const User = require('../models/user')
 const Post = require('../models/feed')
@@ -100,5 +101,29 @@ module.exports = {
 			updatedAt: createdPost.updatedAt.toISOString(),
 			creator,
 		}
+  },
+
+  posts: async ({ queryInput }, req) => {
+    if (!req.isAuth) {
+      throw exception.unauthenticated('Not authenticated.')
+    }
+
+    const totalItems = await Post.find().countDocuments()
+
+    const { page = 1, itemsPerPage = ITEMS_PER_PAGE } = queryInput
+		const pagedPosts = await Post.find()
+      .populate('creator')
+      .sort({ createdAt: -1 })
+			.skip((page - 1) * itemsPerPage)
+			.limit(itemsPerPage)
+
+		return {
+      items: pagedPosts.map(post => ({
+        ...post._doc,
+        createdAt: post.createdAt.toISOString(),
+			  updatedAt: post.updatedAt.toISOString(),
+      })),
+      totalItems,
+    }
   }
 }
