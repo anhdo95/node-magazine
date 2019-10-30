@@ -210,8 +210,6 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log('resData.data :', resData.data);
-
         this.setState(prevState => {
           const updatedPosts = [...prevState.posts];
 
@@ -251,11 +249,22 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch(`http://localhost:8080/feed/post/${postId}`, {
-      method: 'DELETE',
+
+    const graphQlQuery = {
+      query: `
+        mutation {
+          deletePost(id: "${postId}")
+        }
+      `
+    };
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.props.token}`
-      }
+      },
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
@@ -264,7 +273,9 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log(resData);
+        if (resData.data.deletePost) {
+          this.loadPosts()
+        }
       })
       .catch(err => {
         console.log(err);

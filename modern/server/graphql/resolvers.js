@@ -205,5 +205,35 @@ module.exports = {
 			createdAt: postToUpdate.createdAt.toISOString(),
 			updatedAt: postToUpdate.updatedAt.toISOString(),
 		}
+  },
+
+	deletePost: async ({ id }, req) => {
+    try {
+      if (!req.isAuth) {
+        throw exception.unauthenticated('Not authenticated.')
+      }
+
+      const postToDelete = await Post.findById(id)
+
+      if (!postToDelete) {
+        throw exception.notFound('Could not found post.')
+      }
+
+      if (!postToDelete.creator.equals(req.userId)) {
+        throw exception.unauthorized()
+      }
+
+      await Post.deleteOne({ _id: id })
+
+      const creator = await User.findById(req.userId)
+      creator.posts.pull(id)
+      creator.save()
+
+      fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+
+      return true
+    } catch (error) {
+      return false
+    }
 	},
 }
