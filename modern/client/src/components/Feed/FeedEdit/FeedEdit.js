@@ -7,6 +7,7 @@ import FilePicker from '../../Form/Input/FilePicker';
 import Image from '../../Image/Image';
 import { required, length } from '../../../util/validators';
 import { generateBase64FromImage } from '../../../util/image';
+import { DOMAIN } from '../../../util/constants';
 
 const POST_FORM = {
   title: {
@@ -166,8 +167,8 @@ class FeedEdit extends Component {
             />
             <div className="new-post__preview-image">
               {!this.state.imagePreview && <p>Please choose an image.</p>}
-              {this.state.imagePreview && (
-                <Image imageUrl={this.state.imagePreview} contain left />
+              {(this.state.imagePreview || this.props.selectedPost.imagePath) && (
+                <Image imageUrl={this.state.imagePreview || `${DOMAIN}/${this.props.selectedPost.imagePath}`} contain left />
               )}
             </div>
             <Input

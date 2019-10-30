@@ -62,7 +62,7 @@ class Feed extends Component {
         {
           posts(queryInput: { page: ${page}, itemsPerPage: ${ITEMS_PER_PAGE} }) {
             items {
-              _id, title, creator { name }, createdAt
+              _id, title, imageUrl, creator { name }, createdAt
             }, totalItems
           }
         }
@@ -81,12 +81,15 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
-        console.log('resData :', resData);
+        const posts = resData.data.posts.items.map(post => {
+          return {
+          ...post,
+          imagePath: post.imageUrl
+          }
+        })
+
         this.setState({
-          posts: resData.data.posts.items.map(post => ({
-            ...post,
-            imagePath: post.imageUrl
-          })),
+          posts,
           totalPosts: resData.data.posts.totalItems,
           postsLoading: false
         });
@@ -142,48 +145,65 @@ class Feed extends Component {
       editLoading: true
     });
 
-    const formData = new FormData()
-    formData.append('title', postData.title)
-    formData.append('content', postData.content)
-    formData.append('image', postData.image)
+    const formData = new FormData();
+    formData.append("title", postData.title);
+    formData.append("content", postData.content);
+    formData.append("image", postData.image);
 
     if (this.state.editPost) {
-      // url = `http://localhost:8080/feed/post/${this.state.editPost._id}`;
+      formData.append("oldFilePath", this.state.editPost.imageUrl);
     }
 
-    const graphQlQuery = {
-      query: `
-        mutation {
-          createPost(postInput: {
-            title: "${postData.title}",
-            content: "${postData.content}",
-            imageUrl: "image.png"
-          }) {
-            _id, title, content, imageUrl, creator { name }, createdAt
-          }
-        }
-      `
-    }
-
-    fetch(GRAPHQL_URL, {
-      method: 'POST',
+    fetch(`${DOMAIN}/post-image`, {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.props.token}`
+        Authorization: `Bearer ${this.props.token}`
       },
-      body: JSON.stringify(graphQlQuery)
+      body: formData
     })
+      .then(res => res.json())
+      .then(fileResData => {
+        let graphQlQuery
+
+        if (this.state.editPost) {
+        } else {
+          graphQlQuery = {
+            query: `
+              mutation {
+                createPost(postInput: {
+                  title: "${postData.title}",
+                  content: "${postData.content}",
+                  imageUrl: "${fileResData.filePath}"
+                }) {
+                  _id, title, content, imageUrl, creator { name }, createdAt
+                }
+              }
+            `
+          };
+        }
+
+
+
+        return fetch(GRAPHQL_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.props.token}`
+          },
+          body: JSON.stringify(graphQlQuery)
+        });
+      })
       .then(res => {
         return res.json();
       })
-      .then((resData) => {
-        this.setState((prevState) => {
-          const updatedPosts = [ ...prevState.posts ]
+      .then(resData => {
+        this.setState(prevState => {
+          const updatedPosts = [...prevState.posts];
 
           if (resData.data.createPost) {
             if (prevState.postPage === 1) {
-              updatedPosts.unshift(resData.data.createPost)
-              updatedPosts.splice(ITEMS_PER_PAGE)
+              updatedPosts.unshift(resData.data.createPost);
+              updatedPosts.splice(ITEMS_PER_PAGE);
             }
           }
 

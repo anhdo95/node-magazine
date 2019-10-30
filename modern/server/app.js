@@ -7,6 +7,8 @@ const uuidv4 = require('uuid/v4')
 
 const graphqlHttp = require('./graphql')
 const auth = require('./middleware/auth')
+const exception = require('./exception')
+const fileHelper = require('./util/file')
 const { MONGODB_URI } = require('./secret/config')
 
 const app = express()
@@ -44,6 +46,22 @@ app.use((req, res, next) => {
 })
 
 app.use(auth)
+
+app.put('/post-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw exception.unauthenticated('Not Authenticated.')
+  }
+
+  if (!req.file) {
+    return res.status(200).json({ message: 'No image provided'})
+  }
+
+  if (req.body.oldFilePath) {
+    fileHelper.deleteFile(fileHelper.resolve(req.body.oldFilePath))
+  }
+
+  return res.status(201).json({ message: 'File uploaded', filePath: req.file.path.replace('\\', '/') })
+})
 
 app.use('/graphql', graphqlHttp)
 
