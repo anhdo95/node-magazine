@@ -67,14 +67,15 @@ class Feed extends Component {
 
     const graphQlQuery = {
       query: `
-        {
-          posts(queryInput: { page: ${page}, itemsPerPage: ${ITEMS_PER_PAGE} }) {
+        query FetchPosts($page: Int!) {
+          posts(queryInput: { page: $page, itemsPerPage: ${ITEMS_PER_PAGE} }) {
             items {
               _id, title, imageUrl, content, creator { name }, createdAt
             }, totalItems
           }
         }
-      `
+      `,
+      variables: { page }
     }
 
     fetch(GRAPHQL_URL, {
@@ -110,12 +111,13 @@ class Feed extends Component {
 
     const graphQlQuery = {
       query: `
-        mutation {
-          updateUserStatus(status: "${this.state.status}") {
+        mutation UpdateUserStatus($status: String!) {
+          updateUserStatus(status: $status) {
             status
           }
         }
-      `
+      `,
+      variables: { status: this.state.status }
     };
 
     fetch(GRAPHQL_URL, {
@@ -185,32 +187,43 @@ class Feed extends Component {
         if (this.state.editPost) {
           graphQlQuery = {
             query: `
-              mutation {
+              mutation UpdatePost($id: ID!, $title: String!, $content: String!, $imageUrl: String!) {
                 updatePost(
-                  id: "${this.state.editPost._id}",
+                  id: $id,
                   postInput: {
-                    title: "${postData.title}",
-                    content: "${postData.content}",
-                    imageUrl: "${fileResData.filePath || this.state.editPost.imageUrl}"
+                    title: $title,
+                    content: $content,
+                    imageUrl: $imageUrl
                 }) {
                   _id, title, content, imageUrl, creator { name }, createdAt
                 }
               }
-            `
+            `,
+            variables: {
+              id: this.state.editPost._id,
+              title: postData.title,
+              content: postData.content,
+              imageUrl: fileResData.filePath || this.state.editPost.imageUrl
+            }
           };
         } else {
           graphQlQuery = {
             query: `
-              mutation {
+              mutation CreatePost($title: String!, $content: String!, $imageUrl: String!) {
                 createPost(postInput: {
-                  title: "${postData.title}",
-                  content: "${postData.content}",
-                  imageUrl: "${fileResData.filePath}"
+                  title: $title,
+                  content: $content,
+                  imageUrl: $imageUrl
                 }) {
                   _id, title, content, imageUrl, creator { name }, createdAt
                 }
               }
-            `
+            `,
+            variables: {
+              title: postData.title,
+              content: postData.content,
+              imageUrl: fileResData.filePath
+            }
           };
         }
 
@@ -269,10 +282,13 @@ class Feed extends Component {
 
     const graphQlQuery = {
       query: `
-        mutation {
-          deletePost(id: "${postId}")
+        mutation DeletePost($id: ID!) {
+          deletePost(id: $id)
         }
-      `
+      `,
+      variables: {
+        id: postId
+      }
     };
 
     fetch(GRAPHQL_URL, {
