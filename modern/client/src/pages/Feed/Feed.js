@@ -62,7 +62,7 @@ class Feed extends Component {
         {
           posts(queryInput: { page: ${page}, itemsPerPage: ${ITEMS_PER_PAGE} }) {
             items {
-              _id, title, imageUrl, creator { name }, createdAt
+              _id, title, imageUrl, content, creator { name }, createdAt
             }, totalItems
           }
         }
@@ -140,7 +140,7 @@ class Feed extends Component {
     this.setState({ isEditing: false, editPost: null });
   };
 
-  finishEditHandler = postData => {
+  finishEditHandler = async (postData) => {
     this.setState({
       editLoading: true
     });
@@ -154,7 +154,7 @@ class Feed extends Component {
       formData.append("oldFilePath", this.state.editPost.imageUrl);
     }
 
-    fetch(`${DOMAIN}/post-image`, {
+    return fetch(`${DOMAIN}/post-image`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${this.props.token}`
@@ -166,6 +166,21 @@ class Feed extends Component {
         let graphQlQuery
 
         if (this.state.editPost) {
+          graphQlQuery = {
+            query: `
+              mutation {
+                updatePost(
+                  id: "${this.state.editPost._id}",
+                  postInput: {
+                    title: "${postData.title}",
+                    content: "${postData.content}",
+                    imageUrl: "${fileResData.filePath || this.state.editPost.imageUrl}"
+                }) {
+                  _id, title, content, imageUrl, creator { name }, createdAt
+                }
+              }
+            `
+          };
         } else {
           graphQlQuery = {
             query: `
@@ -182,8 +197,6 @@ class Feed extends Component {
           };
         }
 
-
-
         return fetch(GRAPHQL_URL, {
           method: "POST",
           headers: {
@@ -197,13 +210,19 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log('resData.data :', resData.data);
+
         this.setState(prevState => {
           const updatedPosts = [...prevState.posts];
 
-          if (resData.data.createPost) {
-            if (prevState.postPage === 1) {
+          if (resData.data.createPost && prevState.postPage === 1) {
               updatedPosts.unshift(resData.data.createPost);
               updatedPosts.splice(ITEMS_PER_PAGE);
+          } else if (resData.data.updatePost) {
+            const updatedPostIndex = updatedPosts.findIndex(p => p._id === resData.data.updatePost._id)
+
+            if (~updatedPostIndex) {
+              updatedPosts[updatedPostIndex] = resData.data.updatePost
             }
           }
 

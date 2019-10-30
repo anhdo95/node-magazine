@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 
 const { SECRET_JWT_KEY } = require('../secret/config')
 const { ITEMS_PER_PAGE } = require('../util/constants')
+const fileHelper = require('../util/file')
 const exception = require('../exception')
 const User = require('../models/user')
 const Post = require('../models/feed')
@@ -147,6 +148,62 @@ module.exports = {
 			...post._doc,
 			createdAt: post.createdAt.toISOString(),
 			updatedAt: post.updatedAt.toISOString(),
+		}
+  },
+
+  posts: async ({ queryInput }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
+		}
+
+		const totalItems = await Post.find().countDocuments()
+
+		const { page = 1, itemsPerPage = ITEMS_PER_PAGE } = queryInput
+		const pagedPosts = await Post.find()
+			.populate('creator')
+			.sort({ createdAt: -1 })
+			.skip((page - 1) * itemsPerPage)
+			.limit(itemsPerPage)
+
+		return {
+			items: pagedPosts.map((post) => ({
+				...post._doc,
+				createdAt: post.createdAt.toISOString(),
+				updatedAt: post.updatedAt.toISOString(),
+			})),
+			totalItems,
+		}
+	},
+
+	updatePost: async ({ id, postInput }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
+    }
+
+		const postToUpdate = await Post.findById(id).populate('creator')
+
+		if (!postToUpdate) {
+			throw exception.notFound('Could not found post.')
+    }
+
+		if (!postToUpdate.creator._id.equals(req.userId)) {
+			throw exception.unauthorized()
+    }
+
+		if (postToUpdate.imageUrl !== postInput.imageUrl) {
+			fileHelper.deleteFile(fileHelper.resolve(postToUpdate.imageUrl))
+		}
+
+		postToUpdate.title = postInput.title
+		postToUpdate.content = postInput.content
+		postToUpdate.imageUrl = postInput.imageUrl
+
+    await postToUpdate.save()
+
+		return {
+			...postToUpdate._doc,
+			createdAt: postToUpdate.createdAt.toISOString(),
+			updatedAt: postToUpdate.updatedAt.toISOString(),
 		}
 	},
 }

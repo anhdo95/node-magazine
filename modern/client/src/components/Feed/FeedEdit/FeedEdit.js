@@ -34,7 +34,7 @@ class FeedEdit extends Component {
   state = {
     postForm: POST_FORM,
     formIsValid: false,
-    imagePreview: null
+    imagePreview: null,
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -120,13 +120,14 @@ class FeedEdit extends Component {
     this.props.onCancelEdit();
   };
 
-  acceptPostChangeHandler = () => {
+  acceptPostChangeHandler = async () => {
     const post = {
       title: this.state.postForm.title.value,
       image: this.state.postForm.image.value,
       content: this.state.postForm.content.value
     };
-    this.props.onFinishEdit(post);
+    await this.props.onFinishEdit(post)
+
     this.setState({
       postForm: POST_FORM,
       formIsValid: false,
@@ -167,7 +168,7 @@ class FeedEdit extends Component {
             />
             <div className="new-post__preview-image">
               {!this.state.imagePreview && <p>Please choose an image.</p>}
-              {(this.state.imagePreview || this.props.selectedPost.imagePath) && (
+              {(this.state.imagePreview || (this.props.selectedPost && this.props.selectedPost.imagePath)) && (
                 <Image imageUrl={this.state.imagePreview || `${DOMAIN}/${this.props.selectedPost.imagePath}`} contain left />
               )}
             </div>
