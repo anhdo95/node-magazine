@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs')
 const validator = require('validator')
-// const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken')
 
-// const { SECRET_JWT_KEY } = require('../secret/config')
+const { SECRET_JWT_KEY } = require('../secret/config')
 const exception = require('../exception')
 const User = require('../models/user')
 
@@ -31,7 +31,7 @@ module.exports = {
     const existingUser = await User.findOne({ email: userInput.email })
 
     if (existingUser) {
-      throw exception.notFound('User exists already!')
+      throw exception.invalidInput('User exists already!')
     }
 
 		const hashedPassword = await bcrypt.hash(userInput.password, 12)
@@ -43,5 +43,22 @@ module.exports = {
     }).save()
 
     return createdUser
+  },
+
+  login: async ({ email, password }) => {
+    const user = await User.findOne({ email })
+
+    if (!user || !await bcrypt.compare(password, user.password)) {
+      throw exception.notFound('User could not be found!')
+    }
+
+    const token = jwt.sign({
+      email,
+      userId: user._id,
+    }, SECRET_JWT_KEY, { expiresIn: '1h' })
+
+    return {
+      token, userId: user._id
+    }
   }
 }
