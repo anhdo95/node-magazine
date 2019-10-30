@@ -10,17 +10,17 @@ const User = require('../models/user')
 const Post = require('../models/feed')
 
 const getUserValidationErrors = ({ email, name, password }) => {
-  const errors = []
+	const errors = []
 
-  if (!validator.isEmail(email)) {
-    errors.push('Email is invalid')
-  }
+	if (!validator.isEmail(email)) {
+		errors.push('Email is invalid')
+	}
 
-  if (validator.isEmpty(password) || !validator.isLength(password, { min: 5 })) {
-    errors.push('Password at least must be 5 characters')
-  }
+	if (validator.isEmpty(password) || !validator.isLength(password, { min: 5 })) {
+		errors.push('Password at least must be 5 characters')
+	}
 
-  return errors
+	return errors
 }
 
 module.exports = {
@@ -208,33 +208,29 @@ module.exports = {
 	},
 
 	deletePost: async ({ id }, req) => {
-		try {
-			if (!req.isAuth) {
-				throw exception.unauthenticated('Not authenticated.')
-			}
-
-			const postToDelete = await Post.findById(id)
-
-			if (!postToDelete) {
-				throw exception.notFound('Could not found post.')
-			}
-
-			if (!postToDelete.creator.equals(req.userId)) {
-				throw exception.unauthorized()
-			}
-
-			await Post.deleteOne({ _id: id })
-
-			const creator = await User.findById(req.userId)
-			creator.posts.pull(id)
-			creator.save()
-
-			fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
-
-			return true
-		} catch (error) {
-			return false
+		if (!req.isAuth) {
+			throw exception.unauthenticated('Not authenticated.')
 		}
+
+		const postToDelete = await Post.findById(id)
+
+		if (!postToDelete) {
+			throw exception.notFound('Could not found post.')
+		}
+
+		if (!postToDelete.creator.equals(req.userId)) {
+			throw exception.unauthorized()
+		}
+
+		await Post.deleteOne({ _id: id })
+
+		const creator = await User.findById(req.userId)
+		creator.posts.pull(id)
+		creator.save()
+
+		fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+
+		return true
 	},
 
 	user: async (args, req) => {

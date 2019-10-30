@@ -243,9 +243,13 @@ class Feed extends Component {
         this.setState(prevState => {
           const updatedPosts = [...prevState.posts];
 
-          if (resData.data.createPost && prevState.postPage === 1) {
+          if (resData.data.createPost) {
+            if (updatedPosts.length === ITEMS_PER_PAGE) {
+              this.loadPosts()
+            } else if (prevState.postPage === 1) {
               updatedPosts.unshift(resData.data.createPost);
               updatedPosts.splice(ITEMS_PER_PAGE);
+            }
           } else if (resData.data.updatePost) {
             const updatedPostIndex = updatedPosts.findIndex(p => p._id === resData.data.updatePost._id)
 
