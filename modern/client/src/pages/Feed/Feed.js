@@ -24,19 +24,27 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    fetch(`${DOMAIN}/user/status`, {
+    const graphQlQuery = {
+      query: `
+        {
+          user { status }
+        }
+      `
+    }
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${this.props.token}`
       },
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch user status.');
-        }
-        return res.json();
+        return res.json(graphQlQuery);
       })
       .then(resData => {
-        this.setState({ status: resData.status });
+        this.setState({ status: resData.data.user.status });
       })
       .catch(this.catchError);
 
@@ -99,15 +107,24 @@ class Feed extends Component {
 
   statusUpdateHandler = event => {
     event.preventDefault();
-    fetch(`${DOMAIN}/user/status`, {
-      method: 'PATCH',
+
+    const graphQlQuery = {
+      query: `
+        mutation {
+          updateUserStatus(status: "${this.state.status}") {
+            status
+          }
+        }
+      `
+    };
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.props.token}`
       },
-      body: JSON.stringify({
-        status: this.state.status
-      })
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {

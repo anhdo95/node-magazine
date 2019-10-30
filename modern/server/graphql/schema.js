@@ -52,13 +52,15 @@ module.exports = buildSchema(`
     login(email: String!, password: String!): AuthData!
     posts(queryInput: PostsQueryInput): PostsData!
     post(id: ID!): Post!
+    user: User!
   }
 
   type RootMutation {
     createUser(userInput: UserInputData): User!
     createPost(postInput: PostInputData): Post!
     updatePost(id: ID!, postInput: PostInputData): Post!
-    deletePost(id: ID!): Boolean
+    deletePost(id: ID!): Boolean!
+    updateUserStatus(status: String!): User!
   }
 
   schema {

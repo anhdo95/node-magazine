@@ -149,9 +149,9 @@ module.exports = {
 			createdAt: post.createdAt.toISOString(),
 			updatedAt: post.updatedAt.toISOString(),
 		}
-  },
+	},
 
-  posts: async ({ queryInput }, req) => {
+	posts: async ({ queryInput }, req) => {
 		if (!req.isAuth) {
 			throw exception.unauthenticated('Not authenticated.')
 		}
@@ -178,17 +178,17 @@ module.exports = {
 	updatePost: async ({ id, postInput }, req) => {
 		if (!req.isAuth) {
 			throw exception.unauthenticated('Not authenticated.')
-    }
+		}
 
 		const postToUpdate = await Post.findById(id).populate('creator')
 
 		if (!postToUpdate) {
 			throw exception.notFound('Could not found post.')
-    }
+		}
 
 		if (!postToUpdate.creator._id.equals(req.userId)) {
 			throw exception.unauthorized()
-    }
+		}
 
 		if (postToUpdate.imageUrl !== postInput.imageUrl) {
 			fileHelper.deleteFile(fileHelper.resolve(postToUpdate.imageUrl))
@@ -198,42 +198,87 @@ module.exports = {
 		postToUpdate.content = postInput.content
 		postToUpdate.imageUrl = postInput.imageUrl
 
-    await postToUpdate.save()
+		await postToUpdate.save()
 
 		return {
 			...postToUpdate._doc,
 			createdAt: postToUpdate.createdAt.toISOString(),
 			updatedAt: postToUpdate.updatedAt.toISOString(),
 		}
-  },
+	},
 
 	deletePost: async ({ id }, req) => {
-    try {
-      if (!req.isAuth) {
-        throw exception.unauthenticated('Not authenticated.')
-      }
+		try {
+			if (!req.isAuth) {
+				throw exception.unauthenticated('Not authenticated.')
+			}
 
-      const postToDelete = await Post.findById(id)
+			const postToDelete = await Post.findById(id)
 
-      if (!postToDelete) {
-        throw exception.notFound('Could not found post.')
-      }
+			if (!postToDelete) {
+				throw exception.notFound('Could not found post.')
+			}
 
-      if (!postToDelete.creator.equals(req.userId)) {
-        throw exception.unauthorized()
-      }
+			if (!postToDelete.creator.equals(req.userId)) {
+				throw exception.unauthorized()
+			}
 
-      await Post.deleteOne({ _id: id })
+			await Post.deleteOne({ _id: id })
 
-      const creator = await User.findById(req.userId)
-      creator.posts.pull(id)
-      creator.save()
+			const creator = await User.findById(req.userId)
+			creator.posts.pull(id)
+			creator.save()
 
-      fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
+			fileHelper.deleteFile(fileHelper.resolve(postToDelete.imageUrl))
 
-      return true
-    } catch (error) {
-      return false
-    }
+			return true
+		} catch (error) {
+			return false
+		}
+	},
+
+	user: async (args, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated()
+		}
+
+		const user = await User.findById(req.userId)
+
+		if (!user) {
+			throw exception.notFound('Could not found user.')
+		}
+
+		if (!user._id.equals(req.userId)) {
+			throw exception.unauthorized()
+		}
+
+		return {
+			...user._doc,
+			createdAt: user.createdAt.toISOString(),
+		}
+	},
+
+	updateUserStatus: async ({ status }, req) => {
+		if (!req.isAuth) {
+			throw exception.unauthenticated()
+		}
+
+		const userToUpdate = await User.findById(req.userId)
+
+		if (!userToUpdate) {
+			throw exception.notFound('Could not found user.')
+		}
+
+		if (!userToUpdate._id.equals(req.userId)) {
+			throw exception.unauthorized()
+		}
+
+		userToUpdate.status = status
+		await userToUpdate.save()
+
+		return {
+			...userToUpdate._doc,
+			createdAt: userToUpdate.createdAt.toISOString(),
+		}
 	},
 }
