@@ -1,34 +1,47 @@
 const bcrypt = require('bcryptjs')
-// const { validationResult } = require('express-validator')
+const validator = require('validator')
 // const jwt = require('jsonwebtoken')
 
 // const { SECRET_JWT_KEY } = require('../secret/config')
 const exception = require('../exception')
 const User = require('../models/user')
 
+const getUserValidationErrors = ({ email, name, password }) => {
+  const errors = []
+
+  if (!validator.isEmail(email)) {
+    errors.push('Email is invalid')
+  }
+
+  if (validator.isEmpty(password) || !validator.isLength(password, { min: 5 })) {
+    errors.push('Password at least must be 5 characters')
+  }
+
+  return errors
+}
+
 module.exports = {
   createUser: async ({ userInput }, req) => {
-    // validateUser(req)
-    const { email, name, password } = userInput;
+    const errors = getUserValidationErrors(userInput)
 
-    const existingUser = await User.findOne({ email })
+    if (errors.length) {
+      throw exception.invalidInput('Input invalid', errors)
+    }
+
+    const existingUser = await User.findOne({ email: userInput.email })
 
     if (existingUser) {
       throw exception.notFound('User exists already!')
     }
 
-		const hashedPassword = await bcrypt.hash(password, 12)
+		const hashedPassword = await bcrypt.hash(userInput.password, 12)
 
 		const createdUser = await User({
-			email,
-      name,
+			email: userInput.email,
+      name: userInput.name,
 			password: hashedPassword,
     }).save()
 
     return createdUser
-    // res.status(201).json({
-    //   message: 'User created successfully',
-    //   userId: createdUser._id
-    // })
   }
 }
