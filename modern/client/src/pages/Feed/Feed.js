@@ -9,7 +9,7 @@ import Loader from '../../components/Loader/Loader';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
 import './Feed.css';
 
-import { DOMAIN, ITEMS_PER_PAGE } from '../../util/constants'
+import { DOMAIN, GRAPHQL_URL } from '../../util/constants'
 
 class Feed extends Component {
   state = {
@@ -133,29 +133,42 @@ class Feed extends Component {
     formData.append('content', postData.content)
     formData.append('image', postData.image)
 
-    let url = 'http://localhost:8080/feed/post';
-    let method = 'POST'
     if (this.state.editPost) {
-      url = `http://localhost:8080/feed/post/${this.state.editPost._id}`;
-      method = 'PUT'
+      // url = `http://localhost:8080/feed/post/${this.state.editPost._id}`;
     }
 
-    fetch(url, {
-      method,
+    const graphQlQuery = {
+      query: `
+        mutation {
+          createPost(postInput: {
+            title: "${postData.title}",
+            content: "${postData.content}",
+            imageUrl: "image.png"
+          }) {
+            _id, title, content, imageUrl, creator { name }, createdAt
+          }
+        }
+      `
+    }
+
+    fetch(GRAPHQL_URL, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.props.token}`
       },
-      body: formData
+      body: JSON.stringify(graphQlQuery)
     })
       .then(res => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error('Creating or editing a post failed!');
-        }
         return res.json();
       })
-      .then(() => {
-        this.setState(() => {
+      .then((data) => {
+        this.setState((prevState) => {
+          const updatedPosts = [ prevState.posts ]
+          updatedPosts.push(data.createPost)
+
           return {
+            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false

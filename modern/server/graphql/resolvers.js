@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken')
 const { SECRET_JWT_KEY } = require('../secret/config')
 const exception = require('../exception')
 const User = require('../models/user')
+const Post = require('../models/feed')
 
 const getUserValidationErrors = ({ email, name, password }) => {
   const errors = []
@@ -21,6 +22,25 @@ const getUserValidationErrors = ({ email, name, password }) => {
 }
 
 module.exports = {
+  login: async ({ email, password }, req) => {
+    const user = await User.findOne({ email })
+
+    if (!user || !await bcrypt.compare(password, user.password)) {
+      throw exception.notFound('User could not be found!')
+    }
+
+    const token = jwt.sign({
+      email,
+      userId: user._id,
+    }, SECRET_JWT_KEY, { expiresIn: '1h' })
+
+    req.userId = user._id
+
+    return {
+      token, userId: user._id
+    }
+  },
+
   createUser: async ({ userInput }, req) => {
     const errors = getUserValidationErrors(userInput)
 
@@ -45,20 +65,40 @@ module.exports = {
     return createdUser
   },
 
-  login: async ({ email, password }) => {
-    const user = await User.findOne({ email })
-
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      throw exception.notFound('User could not be found!')
+  createPost: async ({ postInput }, req) => {
+    if (!req.isAuth) {
+      throw exception.unauthenticated('Not authenticated.')
     }
 
-    const token = jwt.sign({
-      email,
-      userId: user._id,
-    }, SECRET_JWT_KEY, { expiresIn: '1h' })
+    // TODO: Validate inputs
+    const { title, content, imageUrl } = postInput
+
+		// if (!req.file) {
+		// 	throw exception.invalidInput('No image provided')
+		// }
+
+		const createdPost = await new Post({
+			title,
+			content,
+			// imageUrl: req.file.path.replace('\\', '/'),
+			imageUrl,
+			creator: req.userId,
+    }).save()
+
+    const creator = await User.findById(req.userId)
+
+    if (!creator) {
+      throw exception.unauthenticated('Not authenticated.')
+    }
+
+		creator.posts.push(createdPost)
+    creator.save()
 
     return {
-      token, userId: user._id
-    }
+			...createdPost._doc,
+			createdAt: createdPost.createdAt.toISOString(),
+			updatedAt: createdPost.updatedAt.toISOString(),
+			creator,
+		}
   }
 }

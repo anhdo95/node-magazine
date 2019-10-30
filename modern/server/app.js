@@ -6,6 +6,7 @@ const multer = require('multer')
 const uuidv4 = require('uuid/v4')
 
 const graphqlHttp = require('./graphql')
+const auth = require('./middleware/auth')
 const { MONGODB_URI } = require('./secret/config')
 
 const app = express()
@@ -41,6 +42,8 @@ app.use((req, res, next) => {
 
   next()
 })
+
+app.use(auth)
 
 app.use('/graphql', graphqlHttp)
 
