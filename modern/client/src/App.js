@@ -13,7 +13,7 @@ import LoginPage from './pages/Auth/Login';
 import SignupPage from './pages/Auth/Signup';
 import './App.css';
 
-import { DOMAIN } from './util/constants';
+import { GRAPHQL_URL, DOMAIN } from './util/constants';
 
 class App extends Component {
   state = {
@@ -111,30 +111,42 @@ class App extends Component {
   signupHandler = (event, authData) => {
     event.preventDefault();
     this.setState({ authLoading: true });
-    fetch(`${DOMAIN}/auth/signup`, {
+
+    const { email, password, name } = authData.signupForm
+
+    const graphQlQuery = {
+      query: `
+        mutation {
+          createUser(userInput: {
+            email: "${email.value}",
+            name: "${name.value}",
+            password: "${password.value}"
+          }) {
+            _id, name
+          }
+        }
+      `
+    }
+
+    fetch(GRAPHQL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        email: authData.signupForm.email.value,
-        password: authData.signupForm.password.value,
-        name: authData.signupForm.name.value,
-      })
+      body: JSON.stringify(graphQlQuery)
     })
-      .then(res => {
-        if (res.status === 422) {
+      .then(res => res.json())
+      .then(resData => {
+        if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
             "Validation failed. Make sure the email address isn't used yet!"
           );
         }
-        if (res.status !== 200 && res.status !== 201) {
-          console.log('Error!');
+
+        if (resData.errors) {
           throw new Error('Creating a user failed!');
         }
-        return res.json();
-      })
-      .then(resData => {
+
         console.log(resData);
         this.setState({ isAuth: false, authLoading: false });
         this.props.history.replace('/');

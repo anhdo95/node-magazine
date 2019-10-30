@@ -1,5 +1,4 @@
 import React, { Component, Fragment } from 'react';
-import openSocket from 'socket.io-client';
 
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
@@ -42,54 +41,6 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
-
-    const socket = openSocket(DOMAIN)
-
-    socket.on('posts', (data) => {
-      switch (data.action) {
-        case 'create':
-          return this.addPost(data.post)
-
-        case 'update':
-          return this.updatePost(data.post)
-
-        case 'delete':
-            return this.loadPosts()
-
-        default:
-          return data
-      }
-    })
-  }
-
-  addPost = (post) => {
-    this.setState(prevState => {
-      const updatedPosts = [ ...prevState.posts ]
-      if (prevState.postPage === 1) {
-        updatedPosts.unshift(post)
-        updatedPosts.splice(ITEMS_PER_PAGE)
-      }
-
-      return {
-        posts: updatedPosts,
-        totalPosts: prevState.totalPosts++
-      }
-    })
-  }
-
-  updatePost = (post) => {
-    this.setState(prevState => {
-      const updatedPosts = [ ...prevState.posts ]
-      const updatedPostIndex = updatedPosts.findIndex(p => p._id === post._id)
-
-      if (~updatedPostIndex) {
-        updatedPosts[updatedPostIndex] = post
-      }
-
-      return {
-        posts: updatedPosts
-      }
-    })
   }
 
   loadPosts = direction => {
