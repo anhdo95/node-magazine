@@ -1,5 +1,6 @@
 const express = require('express')
 const helmet = require('helmet')
+const compression = require('compression')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const path = require('path')
@@ -14,6 +15,7 @@ const fileHelper = require('./util/file')
 const app = express()
 
 app.use(helmet())
+app.use(compression())
 
 app.use(bodyParser.json())
 app.use(
