@@ -1,6 +1,7 @@
 const express = require('express')
 const helmet = require('helmet')
 const compression = require('compression')
+const morgan = require('morgan')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 const path = require('path')
@@ -16,6 +17,7 @@ const app = express()
 
 app.use(helmet())
 app.use(compression())
+app.use(morgan('combined', { stream: fileHelper.accessLogStream() }))
 
 app.use(bodyParser.json())
 app.use(
