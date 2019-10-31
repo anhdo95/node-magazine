@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "SET NODE_ENV=production && SET MONGO_USER=admin && SET MONGO_PASSWORD=admin && SET MONGO_DEFAULT_DATABASE=messages && SET SECRET_JWT_KEY=somekeytokenkey && yarn start-server",
+    "start-server": "node app.js",
+    "start:dev": "nodemon app.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken')
 
-const { SECRET_JWT_KEY } = require('../secret/config')
-
 module.exports = (req, res, next) => {
   try {
     const authHeader = req.get('Authorization')
@@ -13,7 +11,7 @@ module.exports = (req, res, next) => {
 
     const [bearer, token] = authHeader.split(' ')
 
-    const decodedToken = jwt.verify(token, SECRET_JWT_KEY)
+    const decodedToken = jwt.verify(token, process.env.SECRET_JWT_KEY)
 
     if (!decodedToken) {
       req.isAuth = false
